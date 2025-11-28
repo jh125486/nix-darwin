@@ -38,6 +38,7 @@
             htop
             jq
             nmap
+            protobuf
             scc
             vhs
             vim
@@ -49,7 +50,6 @@
             # Languages
             buf
             cargo
-            go
             hugo
             jupyter
             python3
@@ -92,47 +92,30 @@
               "arm-none-eabi-gcc"
               "automake"
               "avrdude"
-              "awscli"
               "bazelisk"
-              "buf"
               "changie"
-              "coreutils"
               "direnv"
-              "exiftool"
-              "gh"
               "goplus"
-              "goreleaser"
               "gradle"
-              "htop"
               "httpie"
               "john-jumbo"
-              "jq"
               "jupyterlab"
               "kotlin"
               "maven"
               "mkvtoolnix"
               "ncdu"
               "ninja"
-              "nixfmt"
-              "nmap"
               "open-ocd"
               "openapi-generator"
               "podman"
               "poppler"
               "qemu"
               "redis"
-              "scc"
               "sl"
               "tmux"
               "tree"
-              "vhs"
-              "watch"
-              "wget"
               "youtube-dl"
-              "yq"
               "yt-dlp"
-              "yubico-piv-tool"
-              "zig"
             ];
             casks = [
               "1password"
@@ -220,13 +203,13 @@
           home.sessionPath = [
             "$HOME/bin"
             "$HOME/go/bin"
+            "/Users/${user}/Applications/Home Manager Apps/Visual Studio Code.app/Contents/Resources/app/bin"
           ];
 
           programs.zsh = {
             enable = true;
             shellAliases = {
-              "update-nix" = "sudo darwin-rebuild switch --flake ~/.config/nix";
-              "code" = "/Users/${user}/Applications/Home Manager Apps/Visual Studio Code.app/Contents/Resources/app/bin/code";
+              update-nix = "sudo darwin-rebuild switch --flake ~/.config/nix#CENG-M-139576";
             };
           };
 
@@ -313,25 +296,27 @@
           };
 
           # Make VSCode settings writable while keeping extensions mutable
-          home.activation.makeVSCodeSettingsWritable = inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            VSCODE_CONFIG_DIR="$HOME/Library/Application Support/Code/User"
-            SETTINGS_FILE="$VSCODE_CONFIG_DIR/settings.json"
+          home.activation.makeVSCodeSettingsWritable =
+            inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ]
+              ''
+                VSCODE_CONFIG_DIR="$HOME/Library/Application Support/Code/User"
+                SETTINGS_FILE="$VSCODE_CONFIG_DIR/settings.json"
 
-            # If the settings file is a symlink, replace it with a copy
-            if [ -L "$SETTINGS_FILE" ]; then
-              TARGET=$(readlink -f "$SETTINGS_FILE")
-              run rm $VERBOSE_ARG "$SETTINGS_FILE"
-              run cp $VERBOSE_ARG "$TARGET" "$SETTINGS_FILE"
-              run chmod $VERBOSE_ARG u+w "$SETTINGS_FILE"
-            fi
+                # If the settings file is a symlink, replace it with a copy
+                if [ -L "$SETTINGS_FILE" ]; then
+                  TARGET=$(readlink -f "$SETTINGS_FILE")
+                  run rm $VERBOSE_ARG "$SETTINGS_FILE"
+                  run cp $VERBOSE_ARG "$TARGET" "$SETTINGS_FILE"
+                  run chmod $VERBOSE_ARG u+w "$SETTINGS_FILE"
+                fi
 
-            # Remove old immutable extensions symlink if it exists
-            EXTENSIONS_DIR="$HOME/.vscode/extensions"
-            if [ -L "$EXTENSIONS_DIR" ]; then
-              run rm $VERBOSE_ARG "$EXTENSIONS_DIR"
-              run mkdir -p "$EXTENSIONS_DIR"
-            fi
-          '';
+                # Remove old immutable extensions symlink if it exists
+                EXTENSIONS_DIR="$HOME/.vscode/extensions"
+                if [ -L "$EXTENSIONS_DIR" ]; then
+                  run rm $VERBOSE_ARG "$EXTENSIONS_DIR"
+                  run mkdir -p "$EXTENSIONS_DIR"
+                fi
+              '';
         };
 
     in
