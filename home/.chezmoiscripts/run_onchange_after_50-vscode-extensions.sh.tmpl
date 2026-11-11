@@ -2,9 +2,10 @@
 # Extension list hash (reruns when it changes): {{ include "dot_config/vscode-extensions.txt" | sha256sum }}
 set -euo pipefail
 
+eval "$(/opt/homebrew/bin/brew shellenv)"
 if ! command -v code >/dev/null 2>&1; then
-  echo "warning: 'code' not on PATH; skipping VS Code extensions" >&2
-  exit 0
+  echo "error: 'code' not on PATH (is the visual-studio-code cask installed?)" >&2
+  exit 1
 fi
 
 while IFS= read -r ext; do

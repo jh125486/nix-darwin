@@ -4,4 +4,10 @@
 set -euo pipefail
 
 eval "$(/opt/homebrew/bin/brew shellenv)"
-brew bundle install --no-upgrade --file="{{ .chezmoi.sourceDir }}/../Brewfile"
+brewfile="{{ .chezmoi.sourceDir }}/../Brewfile"
+
+# A failing cask must not abort the whole chezmoi apply.
+if ! brew bundle install --no-upgrade --file="$brewfile"; then
+  echo "brew bundle had failures; rerun: brew bundle install --no-upgrade --file='$brewfile'" >&2
+fi
+exit 0

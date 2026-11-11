@@ -2,7 +2,9 @@
 # Split: mise = runtimes + single-binary CLIs; Brewfile = native-dep formulae, casks,
 # and anything with no mise backend (ncdu, nmap, exiftool, vhs, gcloud-cli, ...).
 # A tool lives in exactly one of the two. Names verified against the jdx/mise
-# registry/ directory; `gh` is an alias of github-cli; scc uses the aqua backend directly.
+# registry/ directory; scc uses the aqua backend directly.
+# gh and hugo are in the Brewfile (hugo: brew formula is the extended build; mise's aqua hugo
+# is unconfirmed to be extended). protoc is the mise name for protobuf.
 
 [tools]
 # Runtimes
@@ -16,12 +18,10 @@ java = "temurin-21"      # required by gradle/kotlin/maven
 
 # Dev CLIs
 aws-cli = "latest"
-gh = "latest"
 jq = "latest"
 yq = "latest"
 buf = "latest"
 goreleaser = "latest"
-hugo = "latest"
 "aqua:boyter/scc" = "latest"   # not in the mise short-name registry
 opentofu = "latest"
 shellcheck = "latest"
@@ -33,3 +33,5 @@ maven = "latest"
 tinygo = "latest"
 glow = "latest"
 changie = "latest"
+protoc = "latest"
+golangci-lint = "latest"   # VS Code go.lintTool depends on it

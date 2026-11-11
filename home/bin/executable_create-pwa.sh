@@ -20,7 +20,8 @@ create_edge_pwa() {
     fi
 
     # Create PWA using Edge
-    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge" \
+    # CHANGED from original: use `open -na` so the call does not block on Edge.
+    open -na "Microsoft Edge" --args \
         --app="$url" \
         --app-id="$(echo -n "$url" | md5)" \
         --app-name="$name" \

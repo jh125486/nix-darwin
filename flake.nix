@@ -77,11 +77,12 @@
 
           homebrew = {
             enable = true;
+            # DO NOT RUN darwin-rebuild: this flake is retired. A cask "zap" cleanup
+            # for microsoft-office wipes Outlook data. Neutered below as a safety net.
             onActivation = {
-              autoUpdate = true;
-              upgrade = true;
-              cleanup = "zap";
-              extraFlags = [ "--force" ]; # Ensure forced updates
+              autoUpdate = false;
+              upgrade = false;
+              cleanup = "none";
             };
             taps = [
               "buo/cask-upgrade"

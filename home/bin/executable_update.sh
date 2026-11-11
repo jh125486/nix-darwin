@@ -7,6 +7,7 @@
 set -euo pipefail
 
 brew update
+unset HOMEBREW_UPGRADE_GREEDY HOMEBREW_UPGRADE_GREEDY_CASKS
 brew upgrade
 brew cleanup
 mise upgrade

@@ -1,4 +1,7 @@
 #!/bin/bash
+# Items whose paths do not exist yet are skipped; re-run after the VM/Edge apps exist
+# (chezmoi state delete-bucket --bucket=scriptState, or edit this script).
+# Teams is installed outside brew; it is only added if already present.
 # Reruns whenever this script (rendered content) changes.
 set -euo pipefail
 
@@ -8,8 +11,8 @@ defaults write com.apple.finder FXDefaultSearchScope SCcf
 
 eval "$(/opt/homebrew/bin/brew shellenv)"
 if ! command -v dockutil >/dev/null 2>&1; then
-  echo "dockutil not found; skipping dock layout" >&2
-  exit 0
+  echo "error: dockutil not found (brew bundle failed?); dock layout not applied" >&2
+  exit 1
 fi
 
 dockutil --remove all --no-restart
@@ -43,4 +46,4 @@ for item in "${items[@]}"; do
   fi
 done
 
-killall Dock
+killall Dock || true
