@@ -1,0 +1,35 @@
+# mise: language runtimes and pure-binary dev CLIs.
+# Split: mise = runtimes + single-binary CLIs; Brewfile = native-dep formulae, casks,
+# and anything with no mise backend (ncdu, nmap, exiftool, vhs, gcloud-cli, ...).
+# A tool lives in exactly one of the two. Names verified against the jdx/mise
+# registry/ directory; `gh` is an alias of github-cli; scc uses the aqua backend directly.
+
+[tools]
+# Runtimes
+go = "latest"
+node = "latest"
+python = "latest"
+uv = "latest"
+rust = "latest"
+zig = "latest"
+java = "temurin-21"      # required by gradle/kotlin/maven
+
+# Dev CLIs
+aws-cli = "latest"
+gh = "latest"
+jq = "latest"
+yq = "latest"
+buf = "latest"
+goreleaser = "latest"
+hugo = "latest"
+"aqua:boyter/scc" = "latest"   # not in the mise short-name registry
+opentofu = "latest"
+shellcheck = "latest"
+direnv = "latest"
+bazelisk = "latest"
+gradle = "latest"
+kotlin = "latest"
+maven = "latest"
+tinygo = "latest"
+glow = "latest"
+changie = "latest"

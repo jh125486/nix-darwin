@@ -1,0 +1,46 @@
+#!/bin/bash
+# Reruns whenever this script (rendered content) changes.
+set -euo pipefail
+
+defaults write com.apple.dock orientation right
+defaults write com.apple.finder FXPreferredViewStyle Nlsv
+defaults write com.apple.finder FXDefaultSearchScope SCcf
+
+eval "$(/opt/homebrew/bin/brew shellenv)"
+if ! command -v dockutil >/dev/null 2>&1; then
+  echo "dockutil not found; skipping dock layout" >&2
+  exit 0
+fi
+
+dockutil --remove all --no-restart
+
+items=(
+  "/Applications/Proton Mail.app"
+  "/Applications/Microsoft Outlook.app"
+  "/Applications/Microsoft Teams.app"
+  "/Applications/Microsoft Edge.app"
+  "/Applications/ChatGPT.app"
+  "/Applications/Claude.app"
+  "$HOME/Applications/Edge Apps.localized/Canvas.app"
+  "/System/Applications/Reminders.app"
+  "/System/Applications/Notes.app"
+  "/System/Applications/Messages.app"
+  "/Applications/Signal.app"
+  "/Applications/Discord.app"
+  "/Applications/WhatsApp.app"
+  "/Applications/Visual Studio Code.app"
+  "/Applications/Ghostty.app"
+  "/Applications/Docker.app/Contents/MacOS/Docker Desktop.app"
+  "/Applications/DBeaver.app"
+  "$HOME/Parallels/Windows 11.pvm/VM.app"
+)
+
+for item in "${items[@]}"; do
+  if [ -e "$item" ]; then
+    dockutil --add "$item" --no-restart
+  else
+    echo "skip (missing): $item"
+  fi
+done
+
+killall Dock
