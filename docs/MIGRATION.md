@@ -4,8 +4,8 @@
 
 | Tool | Owns |
 |------|------|
-| mise (`home/dot_config/mise/config.toml`) | Language runtimes and pure-binary dev CLIs (go, node, python, uv, rust, zig, java, aws-cli, jq, yq, buf, goreleaser, scc, opentofu, shellcheck, direnv, bazelisk, gradle, kotlin, maven, tinygo, glow, changie, protoc, golangci-lint) |
-| Brewfile | Native-dependency formulae (qemu, podman, redis, open-ocd, ...), tools with no mise backend (ncdu, nmap, exiftool, vhs), `gh` and `hugo` (brew hugo is the extended build), all casks, `gcloud-cli` |
+| mise (`home/dot_config/mise/config.toml`) | Everything with a working arm64 backend: runtimes (go, node, python, uv, rust, zig, java) and ~50 CLIs, via registry/aqua, `github:`, `go:`, `npm:` and `conda:` (conda-forge) backends. Full list with backends is in the PR description. |
+| Brewfile | Casks (GUI apps; mise cannot install .app/.dmg/.pkg), bootstrap (`mise`, `chezmoi`), and a short list of formulae mise cannot provide, each with a one-line reason in the Brewfile: avrdude, dockutil, mkvtoolnix, nmap, john-jumbo, pam-reattach, qemu, sl, wireguard-tools, yubico-piv-tool |
 | chezmoi (`home/`) | Dotfiles (zsh, git, mise, VS Code settings) and `.chezmoiscripts/` that run brew bundle, mise install, and macOS settings |
 
 A tool lives in exactly one of mise or brew.
@@ -22,6 +22,11 @@ A tool lives in exactly one of mise or brew.
 Notes:
 - The `.chezmoiscripts` templates were not rendered or run (chezmoi was not available when written).
 - `brew bundle` is run with `--no-upgrade` and never `--cleanup`/`--zap`.
+- `gh` is in mise. The git credential helper therefore points at the mise shim (`~/.local/share/mise/shims/gh`), which works for non-interactive git (IDEs) once `mise install` has run; `home/dot_zprofile` also activates shims for login/non-interactive shells.
+- hugo uses `aqua:gohugoio/hugo/hugo-extended` (the extended build; verified `+extended`).
+- Services: nothing is running under `brew services` on the old machine (checked: jupyterlab, podman, redis are all `none`). mise-installed redis/podman are plain binaries; launchd services via `brew services` are not available for them. If you start relying on that, move the tool back to the Brewfile.
+- conda-forge packages require mise `experimental = true` (set in the config).
+- `mise install` uses the GitHub API; set `GITHUB_TOKEN` (e.g. `export GITHUB_TOKEN=$(gh auth token)`) on first run to avoid rate limits. `go:` and `npm:` tools need go/node installed first; if a first `mise install` fails on those, simply re-run it.
 - If `brew bundle` has failures (e.g. a cask), `chezmoi apply` continues; rerun `brew bundle install --no-upgrade --file=<repo>/Brewfile`.
 - On this machine `/etc/pam.d/sudo_local` is a nix symlink into `/etc/static`; the touchid script replaces it with a regular file. The `pam_reattach.so` path is taken from `$(brew --prefix)/lib/pam/`; the line is skipped if the file is absent.
 - `~/.config/git/config`, `~/.config/git/ignore` and `~/.zshenv` are currently home-manager symlinks into `/nix/store`; remove the dangling links as part of cutover (below).
@@ -84,7 +89,7 @@ data until verified.
    gcloud, nmap, exiftool), check `command -v <tool>` resolves to a mise shim/path or `/opt/homebrew`,
    not `/nix` or `/run/current-system`.
 2. Uninstall nix-darwin and remove `/nix`.
-3. After mise is verified, `brew uninstall` the duplicates now owned by mise: bazelisk, changie, direnv, gradle, kotlin, maven, opentofu, shellcheck, uv, tinygo, glow, buf, goreleaser, plus brew's go/node/python@* if you want mise to own them (check dependents with `brew uses --installed <formula>` first).
+3. ONLY after `command -v` verification, `brew uninstall` the formulae mise now owns (check dependents first with `brew uses --installed <formula>`; `brew uninstall` will refuse if something depends on it): agg arm-none-eabi-gcc automake bazelisk changie direnv furkankly/tap/zoetrope glow gradle herdr httpie jupyterlab kotlin maven ncdu ninja open-ocd openapi-generator opentofu podman poppler redis rtk sevenzip shellcheck tinygo tmux tree uv worktrunk xgo youtube-dl yt-dlp go node python@3.13 python@3.15 and, if installed, gh jq yq htop wget watch coreutils vhs exiftool hugo protobuf. Then `brew untap furkankly/tap goreleaser/tap tinygo-org/tools buo/cask-upgrade`.
 4. Remove dangling home-manager links (`~/.zshenv`, `~/.config/git/config`, `~/.config/git/ignore`) if they are symlinks into `/nix/store`.
 5. In a follow-up PR, delete `flake.nix`, `flake.lock`, and `nix.conf`.
 

@@ -1,57 +1,29 @@
-# Brewfile -- native-dependency CLIs, GUI apps (casks), and things mise cannot provide.
+# Brewfile -- casks (GUI apps), bootstrap tools, and the few formulae mise cannot provide.
 #
-# Split of responsibilities:
-#   mise      (home/dot_config/mise/config.toml): language runtimes and pure-binary dev CLIs.
-#   Brewfile  (this file): formulae with native deps / services, casks, macOS glue.
-#   chezmoi   : dotfiles and the scripts that run `brew bundle` and `mise install`.
-# A tool lives in exactly ONE of mise or brew. Do not duplicate.
+# Casks live here because mise has no .app/.dmg/.pkg backend.
+# Everything else (CLIs, runtimes, native tools) is in home/dot_config/mise/config.toml.
+# A tool lives in exactly ONE of mise or brew. Formulae below each state why mise can't.
 #
 # Applied by `brew bundle install --no-upgrade` (never --cleanup / --zap).
 
 # ---- Taps ----
-tap "furkankly/tap"
+# (none needed)
 
-# ---- Formulae ----
-brew "agg"
-brew "arm-none-eabi-gcc"
-brew "automake"
-brew "avrdude"
-brew "coreutils"
-brew "dockutil"
-brew "exiftool"          # mise only has a conda backend; brew is simpler
-brew "furkankly/tap/zoetrope"
-brew "gh"
-brew "herdr"
-brew "htop"
-brew "hugo"              # brew build is the extended one (mise registry unclear)
-brew "httpie"
-brew "john-jumbo"
-brew "jupyterlab"
-brew "mkvtoolnix"
-brew "ncdu"              # no mise registry short name
-brew "ninja"
-brew "nmap"
-brew "open-ocd"
-brew "openapi-generator"
-brew "pam-reattach"      # Touch ID for sudo inside tmux (see run_once_30-touchid-sudo.sh)
-brew "podman"
-brew "poppler"
-brew "qemu"
-brew "redis"
-brew "rtk"
-brew "sevenzip"
-brew "sl"
-brew "tmux"
-brew "tree"
-brew "watch"
-brew "wget"
-brew "wireguard-tools"
-brew "vhs"               # needs ttyd/ffmpeg deps; brew resolves them
-brew "worktrunk"
-brew "xgo"
-brew "youtube-dl"
-brew "yt-dlp"
-brew "yubico-piv-tool"
+# ---- Bootstrap formulae ----
+brew "chezmoi"           # installs dotfiles; must exist before mise config does
+brew "mise"              # the tool manager itself
+
+# ---- Formulae mise cannot provide ----
+brew "avrdude"           # only release binary is x86_64 (github:avrdudes/avrdude, Rosetta); not on conda-forge/aqua
+brew "dockutil"          # release is a .pkg only; no conda/aqua/github binary
+brew "mkvtoolnix"        # no GitHub release binaries, not on conda-forge osx-arm64, not in registry
+brew "nmap"              # not in registry/aqua, no conda-forge osx-arm64 build
+brew "john-jumbo"        # source-only upstream releases, not on conda-forge osx-arm64
+brew "pam-reattach"      # must live at $(brew --prefix)/lib/pam; not on conda-forge
+brew "qemu"              # not in registry/aqua, not on conda-forge osx-arm64
+brew "sl"                # source-only upstream, not on conda-forge
+brew "wireguard-tools"   # not in registry, not on conda-forge osx-arm64
+brew "yubico-piv-tool"   # upstream release has no arm64 binary, not on conda-forge
 
 # ---- Casks ----
 cask "1password"
@@ -69,7 +41,7 @@ cask "docker-desktop"
 cask "drawio"
 cask "ghostty"
 cask "github"
-cask "gcloud-cli"        # mise's gcloud plugin is a third-party vfox plugin; use the cask
+cask "gcloud-cli"        # mise gcloud is a third-party vfox plugin; the cask is the official install
 cask "google-drive"
 cask "grandperspective"
 cask "hoppscotch"

@@ -1,28 +1,36 @@
-# mise: language runtimes and pure-binary dev CLIs.
-# Split: mise = runtimes + single-binary CLIs; Brewfile = native-dep formulae, casks,
-# and anything with no mise backend (ncdu, nmap, exiftool, vhs, gcloud-cli, ...).
-# A tool lives in exactly one of the two. Names verified against the jdx/mise
-# registry/ directory; scc uses the aqua backend directly.
-# gh and hugo are in the Brewfile (hugo: brew formula is the extended build; mise's aqua hugo
-# is unconfirmed to be extended). protoc is the mise name for protobuf.
+# mise owns every CLI/runtime that has a working arm64 backend. Homebrew is reduced to
+# casks (GUI apps; mise has no .app/.dmg/.pkg backend), bootstrap (mise, chezmoi) and the
+# few formulae listed in the Brewfile with a reason. Each tool lives in exactly one place.
+#
+# Backend order used: registry short name (aqua/core) -> aqua:/github: -> go:/npm: -> conda:.
+# - conda: (conda-forge, osx-arm64) is used for native tools with no release binaries.
+#   It is an experimental mise backend, hence `experimental = true`.
+# - github:/aqua: tools download release binaries; the xpack toolchains are the arm64 builds.
+# - Notes: redis/podman are plain binaries (no launchd service; `brew services` does not
+#   manage them). Verified with an isolated mise 2026.11.6 on macOS arm64 (see docs/MIGRATION.md).
+
+[settings]
+experimental = true
 
 [tools]
-# Runtimes
+# ---- Runtimes ----
 go = "latest"
 node = "latest"
 python = "latest"
 uv = "latest"
 rust = "latest"
 zig = "latest"
-java = "temurin-21"      # required by gradle/kotlin/maven
+java = "temurin-21"      # required by gradle, kotlin, maven, openapi-generator
 
-# Dev CLIs
+# ---- Dev CLIs (registry/aqua) ----
 aws-cli = "latest"
+gh = "latest"            # git credential helper uses the mise shim path (see dot_gitconfig.tmpl)
 jq = "latest"
 yq = "latest"
 buf = "latest"
 goreleaser = "latest"
-"aqua:boyter/scc" = "latest"   # not in the mise short-name registry
+"aqua:gohugoio/hugo/hugo-extended" = "latest"   # extended build (short name `hugo` is non-extended)
+"aqua:boyter/scc" = "latest"
 opentofu = "latest"
 shellcheck = "latest"
 direnv = "latest"
@@ -34,4 +42,38 @@ tinygo = "latest"
 glow = "latest"
 changie = "latest"
 protoc = "latest"
-golangci-lint = "latest"   # VS Code go.lintTool depends on it
+golangci-lint = "latest"
+vhs = "latest"
+ttyd = "latest"                  # vhs runtime dependency
+ffmpeg = "latest"                # vhs runtime dependency
+rtk = "latest"
+herdr = "latest"
+worktrunk = "latest"             # provides `wt`
+ninja = "latest"
+tmux = "latest"
+"aqua:uutils/coreutils" = "latest"
+"7zip" = "latest"                # provides 7zz
+yt-dlp = "latest"
+
+# ---- conda-forge (osx-arm64) ----
+"conda:youtube-dl" = "latest"
+"conda:poppler" = "latest"
+"conda:redis-server" = "latest"
+"conda:podman" = "latest"
+"conda:exiftool" = "latest"
+"conda:automake" = "latest"
+"conda:htop" = "latest"
+"conda:wget" = "latest"
+"conda:watch" = "latest"
+"conda:tree" = "latest"
+"conda:httpie" = "latest"
+"conda:ncdu" = "latest"
+"conda:jupyterlab" = "latest"
+
+# ---- github / go / npm backends ----
+"github:asciinema/agg" = "latest"
+"github:xpack-dev-tools/openocd-xpack" = "latest"
+"github:xpack-dev-tools/arm-none-eabi-gcc-xpack" = "latest"
+"github:furkankly/zoetrope" = "latest"           # binary is `zoe`
+"go:src.techknowlogick.com/xgo" = "latest"
+"npm:@openapitools/openapi-generator-cli" = "latest"   # downloads the jar; needs java
