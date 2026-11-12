@@ -1,0 +1,14 @@
+#!/bin/bash
+# Extension list hash (reruns when it changes): {{ include "dot_config/vscode-extensions.txt" | sha256sum }}
+set -euo pipefail
+
+eval "$(/opt/homebrew/bin/brew shellenv)"
+if ! command -v code >/dev/null 2>&1; then
+  echo "error: 'code' not on PATH (is the visual-studio-code cask installed?)" >&2
+  exit 1
+fi
+
+while IFS= read -r ext; do
+  [ -z "$ext" ] && continue
+  code --install-extension "$ext" || echo "warning: failed to install $ext" >&2
+done <"$HOME/.config/vscode-extensions.txt"

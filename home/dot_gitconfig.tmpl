@@ -1,0 +1,20 @@
+[user]
+	name = Jacob Hochstetler
+	email = jacob.hochstetler@gmail.com
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGDJCefoRQh6F9GJ6H86GcXz+FHXhkfkK8J1Q5eY05qe
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+[commit]
+	gpgsign = true
+[init]
+	defaultBranch = main
+[push]
+	autoSetupRemote = true
+[credential "https://github.com"]
+	helper =
+	helper = !{{ .chezmoi.homeDir }}/.local/share/mise/shims/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !{{ .chezmoi.homeDir }}/.local/share/mise/shims/gh auth git-credential
