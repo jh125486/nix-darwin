@@ -5,7 +5,7 @@
 | Tool | Owns |
 |------|------|
 | mise (`home/dot_config/mise/config.toml`) | Everything with a working arm64 backend: runtimes (go, node, python, uv, rust, zig, java) and ~50 CLIs, via registry/aqua, `github:`, `go:`, `npm:` and `conda:` (conda-forge) backends. Full list with backends is in the PR description. |
-| Brewfile | Casks (GUI apps; mise cannot install .app/.dmg/.pkg), bootstrap (`mise`, `chezmoi`), and a short list of formulae mise cannot provide, each with a one-line reason in the Brewfile: avrdude, dockutil, mkvtoolnix, nmap, john-jumbo, pam-reattach, qemu, sl, wireguard-tools, yubico-piv-tool |
+| Brewfile | Casks (GUI apps; mise cannot install .app/.dmg/.pkg), bootstrap (`mise`, `chezmoi`), and a short list of formulae mise cannot provide, each with a one-line reason in the Brewfile: dockutil, mkvtoolnix, nmap, john-jumbo, pam-reattach, qemu, sl, wireguard-tools, yubico-piv-tool |
 | chezmoi (`home/`) | Dotfiles (zsh, git, mise, VS Code settings) and `.chezmoiscripts/` that run brew bundle, mise install, and macOS settings |
 
 A tool lives in exactly one of mise or brew.
