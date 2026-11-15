@@ -1,0 +1,136 @@
+# Machine setup for macOS, driven by `mise bootstrap` (mise >= 2026.9.2).
+# Run from this checkout:   mise -C ~/.dotfiles bootstrap     (see docs/MIGRATION.md)
+# First time on a new Mac:  ./bootstrap.sh
+#
+# This is the *project* config of the bootstrap repo. The CLI/runtime list lives in
+# dotfiles/mise/config.toml, which is deployed to ~/.config/mise/config.toml below.
+# Hooks and the `bootstrap` task run on EVERY `mise bootstrap`, so all scripts here are
+# idempotent and cheap.
+
+# ---------------------------------------------------------------------------
+# Dotfiles (mise [dotfiles]). Sources are relative to this file.
+# ---------------------------------------------------------------------------
+[dotfiles]
+# mise's own global config (tools list). mise re-reads it before planning other entries.
+"~/.config/mise/config.toml" = { source = "dotfiles/mise/config.toml", mode = "copy" }
+"~/.zshrc" = { source = "dotfiles/zshrc", mode = "copy" }
+"~/.zprofile" = { source = "dotfiles/zprofile", mode = "copy" }
+"~/.gitconfig" = { source = "dotfiles/gitconfig.tera", mode = "template" }
+"~/.config/git/ignore" = { source = "dotfiles/git/ignore", mode = "copy" }
+# VS Code rewrites its settings.json, so only own the keys we ship (merge, JSONC).
+"~/Library/Application Support/Code/User/settings.json/shared" = { source = "dotfiles/vscode/shared.json", merge = true, format = "jsonc" }
+
+# ~/bin scripts: regular executable copies.
+# update.sh REPLACES the old live ~/bin/update.sh (which ran `brew cu -a`, wiping Outlook).
+# copy mode overwrites a differing file after confirmation (interactive prompt, or --yes);
+# non-interactively without --yes it stops. scripts/check-update-sh.sh then fails the run if `brew cu` survives.
+"~/bin/update.sh" = { source = "dotfiles/bin/update.sh", mode = "copy", permissions = "0755" }
+"~/bin/backup-outlook.sh" = { source = "dotfiles/bin/backup-outlook.sh", mode = "copy", permissions = "0755" }
+"~/bin/restore-outlook.sh" = { source = "dotfiles/bin/restore-outlook.sh", mode = "copy", permissions = "0755" }
+"~/bin/create-pwa.sh" = { source = "dotfiles/bin/create-pwa.sh", mode = "copy", permissions = "0755" }
+
+# ---------------------------------------------------------------------------
+# macOS preferences. Dock/Finder are NOT restarted by mise; see post-defaults hook.
+# ---------------------------------------------------------------------------
+[bootstrap.settings.macos.dock]
+orientation = "right"
+
+[bootstrap.settings.macos.finder]
+preferred_view_style = "list"          # com.apple.finder FXPreferredViewStyle = Nlsv
+
+[bootstrap.settings.macos.defaults."com.apple.finder"]
+FXDefaultSearchScope = "SCcf"          # search the current folder
+
+# ---------------------------------------------------------------------------
+# Hooks (run every time; keep idempotent) and the bootstrap task
+# ---------------------------------------------------------------------------
+[bootstrap.hooks]
+# Fail loudly if the old update.sh (brew cu) is still in place.
+post-dotfiles = "bash {{ config_root }}/scripts/check-update-sh.sh"
+post-defaults = "killall Dock Finder || true"
+
+# Touch ID for sudo (+ pam_reattach). Needs pam-reattach installed, so after packages.
+[bootstrap.hooks.post-packages]
+description = "Touch ID sudo (/etc/pam.d/sudo_local)"
+run = "bash {{ config_root }}/scripts/touchid-sudo.sh"
+
+# Runs after packages, dotfiles, defaults and tools, with [tools] on PATH.
+[tasks.bootstrap]
+description = "VS Code extensions, Edge apps, Dock order"
+run = [
+  "bash {{ config_root }}/scripts/vscode-extensions.sh",
+  "bash {{ config_root }}/scripts/edge-pwas.sh",
+  "bash {{ config_root }}/scripts/dock.sh",
+]
+
+# ---------------------------------------------------------------------------
+# Homebrew: casks and the few formulae mise cannot install as prebuilt binaries.
+# `mise bootstrap` only installs MISSING packages; it never upgrades them.
+# NEVER run `mise bootstrap --upgrade` or `mise bootstrap packages upgrade`:
+# they can reinstall microsoft-office from the full .pkg and wipe Outlook.
+# ---------------------------------------------------------------------------
+[bootstrap.packages]
+# mise only fetches prebuilt binaries and cannot compile from source; Homebrew compiles these
+# and publishes arm64 bottles, which is why they stay in brew.
+"brew:dockutil" = "latest"          # upstream release is a .pkg only; Homebrew has an arm64 bottle
+"brew:mkvtoolnix" = "latest"        # no prebuilt arm64 binary for mise; Homebrew has an arm64 bottle
+"brew:nmap" = "latest"              # no prebuilt arm64 binary for mise; Homebrew has an arm64 bottle
+"brew:john-jumbo" = "latest"        # no prebuilt arm64 binary for mise; Homebrew has an arm64 bottle
+"brew:pam-reattach" = "latest"      # must live under $(brew --prefix)/lib/pam; Homebrew has an arm64 bottle
+"brew:qemu" = "latest"              # no prebuilt arm64 binary for mise; Homebrew has an arm64 bottle
+"brew:sl" = "latest"                # no prebuilt arm64 binary for mise; Homebrew has an arm64 bottle
+"brew:wireguard-tools" = "latest"   # no prebuilt arm64 binary for mise; Homebrew has an arm64 bottle
+"brew:yubico-piv-tool" = "latest"   # no prebuilt arm64 binary for mise; Homebrew has an arm64 bottle
+
+"brew-cask:1password" = "latest"
+"brew-cask:1password-cli" = "latest"
+"brew-cask:adobe-creative-cloud" = "latest"
+"brew-cask:bartender" = "latest"
+"brew-cask:chatgpt" = "latest"
+"brew-cask:claude" = "latest"
+"brew-cask:claude-code" = "latest"
+"brew-cask:copilot-cli" = "latest"
+"brew-cask:dbeaver-community" = "latest"
+"brew-cask:discord" = "latest"
+"brew-cask:displaylink" = "latest"
+"brew-cask:docker-desktop" = "latest"
+"brew-cask:drawio" = "latest"
+"brew-cask:ghostty" = "latest"
+"brew-cask:github" = "latest"
+"brew-cask:gcloud-cli" = "latest"        # mise gcloud is a third-party vfox plugin; the cask is official
+"brew-cask:google-drive" = "latest"
+"brew-cask:grandperspective" = "latest"
+"brew-cask:hoppscotch" = "latest"
+"brew-cask:inkscape" = "latest"
+"brew-cask:iterm2" = "latest"
+"brew-cask:jetbrains-toolbox" = "latest"
+"brew-cask:keepingyouawake" = "latest"
+"brew-cask:libreoffice" = "latest"
+"brew-cask:logi-options+" = "latest"
+"brew-cask:logitech-presentation" = "latest"
+"brew-cask:macshot" = "latest"
+"brew-cask:microsoft-auto-update" = "latest"
+"brew-cask:microsoft-edge" = "latest"
+
+# !!! MICROSOFT OFFICE -- READ THIS !!!
+# NEVER upgrade this via `brew cu`, `brew upgrade --greedy`, `brew upgrade --cask microsoft-office`
+# or `mise bootstrap --upgrade`. Reinstalling the full .pkg resets Outlook and WIPES accounts and
+# signatures. Updates come from Microsoft AutoUpdate ONLY. See docs/MIGRATION.md.
+"brew-cask:microsoft-office" = "latest"
+
+"brew-cask:openinterminal-lite" = "latest"
+"brew-cask:parallels" = "latest"
+"brew-cask:proton-mail" = "latest"
+"brew-cask:protonvpn" = "latest"
+"brew-cask:qflipper" = "latest"
+"brew-cask:rstudio" = "latest"
+"brew-cask:shottr" = "latest"
+"brew-cask:signal" = "latest"
+"brew-cask:stats" = "latest"
+"brew-cask:steam" = "latest"
+"brew-cask:visual-studio-code" = "latest"
+"brew-cask:whatsapp" = "latest"
+"brew-cask:wireshark-app" = "latest"
+"brew-cask:yubico-authenticator" = "latest"
+# yubico-yubikey-manager: removed from homebrew-cask (404 in the formulae.brew.sh API); the installed copy is left alone, reinstall from yubico.com if needed.
+"brew-cask:zed" = "latest"

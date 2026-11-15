@@ -1,7 +1,7 @@
-# nix-darwin -> mise + Brewfile + chezmoi
+# nix-darwin -> mise
 
-This repo manages a macOS machine with chezmoi (source root: `home/`), a `Brewfile`, and mise.
-The old nix-darwin `flake.nix`/`flake.lock` are retained only until retirement.
+This repo sets up a macOS machine with mise: `[tools]` for CLIs and runtimes, `[dotfiles]` for config,
+and `mise bootstrap` for casks, macOS defaults and setup scripts. The old nix-darwin `flake.nix` is retired.
 
-New machine: `./bootstrap.sh`. Full details, the Outlook warning, and the cutover checklist
-are in [docs/MIGRATION.md](docs/MIGRATION.md).
+New machine: `./bootstrap.sh`. Re-run on an existing machine: `mise -C ~/.dotfiles bootstrap`.
+Full details, the Outlook warning, and the cutover checklist: [docs/MIGRATION.md](docs/MIGRATION.md).

@@ -1,52 +1,80 @@
-# Migration: nix-darwin -> mise + Brewfile + chezmoi
+# Migration: nix-darwin -> mise (tools, dotfiles, bootstrap)
 
-## 1. Architecture
+Everything is driven by mise (>= 2026.9.2): `[tools]`, `[dotfiles]`, and `mise bootstrap`.
+There is no chezmoi and no Brewfile. Homebrew is only the backend that `[bootstrap.packages]` uses
+for casks and nine formulae, plus the one thing needed to get mise itself.
 
-| Tool | Owns |
+## 1. Architecture and layout
+
+```
+mise.toml               project config: [dotfiles], [bootstrap.*], hooks, [tasks.bootstrap], packages
+dotfiles/               sources deployed by [dotfiles] (zshrc, zprofile, gitconfig.tera, git/ignore,
+                        mise/config.toml = the global tools list, vscode/shared.json, bin/*.sh)
+scripts/                idempotent helper scripts called from hooks / the bootstrap task
+bootstrap.sh            new-Mac entry point (Homebrew -> mise -> `mise bootstrap --from`)
+docs/MIGRATION.md      this file
+flake.nix, flake.lock   retired nix-darwin (neutered; delete in a follow-up PR)
+```
+
+**Why `--from` and not `--adopt`.** Per the mise docs, `--adopt <repo>` either clones a repo into
+`~/.config/mise` as the global config, or restores a setup repo that has `.mise-history/` (made by
+`mise dot track` + `mise dot origin set`). This repo is neither: it is a *bootstrap project* with a root
+`mise.toml`, which is exactly what `mise bootstrap --from <url> --from-dir ~/.dotfiles` handles (it clones
+to `~/.dotfiles` and trusts that `mise.toml` for the run). The global tools list is deployed as a
+dotfile (`~/.config/mise/config.toml`); mise re-reads its own config after writing it and then installs
+`[tools]`.
+
+| What | Owner |
 |------|------|
-| mise (`home/dot_config/mise/config.toml`) | Everything with a working arm64 backend: runtimes (go, node, python, uv, rust, zig, java) and ~50 CLIs, via registry/aqua, `github:`, `go:`, `npm:` and `conda:` (conda-forge) backends. Full list with backends is in the PR description. |
-| Brewfile | Casks (GUI apps; mise cannot install .app/.dmg/.pkg), bootstrap (`mise`, `chezmoi`), and a short list of formulae mise cannot provide, each with a one-line reason in the Brewfile: dockutil, mkvtoolnix, nmap, john-jumbo, pam-reattach, qemu, sl, wireguard-tools, yubico-piv-tool |
-| chezmoi (`home/`) | Dotfiles (zsh, git, mise, VS Code settings) and `.chezmoiscripts/` that run brew bundle, mise install, and macOS settings |
+| Runtimes and ~55 CLIs (go, node, python, uv, rust, zig, java, aws-cli, gh, jq, ... ) | `[tools]` in `dotfiles/mise/config.toml` (registry/aqua, `github:`, `go:`, `npm:`, `conda:` backends; list with backends in the PR description) |
+| Casks (46 GUI apps) and 9 formulae (dockutil, mkvtoolnix, nmap, john-jumbo, pam-reattach, qemu, sl, wireguard-tools, yubico-piv-tool) | `[bootstrap.packages]` in `mise.toml` (`brew-cask:` / `brew:`; mise installs only what is missing) |
+| Dotfiles | `[dotfiles]` in `mise.toml` |
+| macOS Dock orientation, Finder view style and search scope | `[bootstrap.settings.macos]` (native) |
+| Dock app order, VS Code extensions, Edge apps, Touch ID sudo | hooks / `[tasks.bootstrap]` calling `scripts/*.sh` (not expressible natively; see below) |
 
-A tool lives in exactly one of mise or brew.
+A tool lives in exactly one of mise tools or bootstrap packages. Homebrew formulae remain only for tools
+mise cannot install: mise only fetches prebuilt binaries and cannot compile from source; Homebrew compiles
+these and publishes arm64 bottles. Casks stay because mise `[tools]` has no .app/.dmg/.pkg backend (the
+`brew-cask:` package manager handles them).
 
 | nix-darwin feature | Replacement |
 |---|---|
-| Touch ID for sudo | `run_once_after_30-touchid-sudo.sh` (writes `/etc/pam.d/sudo_local`, with `pam-reattach`) |
-| Dock on the right, dock layout | `run_onchange_after_40-macos-defaults-dock.sh.tmpl` (`defaults` + `dockutil`) |
-| Finder prefs | same script (`FXPreferredViewStyle`, `FXDefaultSearchScope`) |
-| git config | `home/dot_gitconfig.tmpl`, `home/dot_config/git/ignore` |
-| zsh | `home/dot_zshrc`, `home/dot_zprofile` |
-| VS Code settings/extensions | `home/Library/Application Support/Code/User/create_settings.json` (created only if absent), `home/dot_config/vscode-extensions.txt`, `run_onchange_after_50-vscode-extensions.sh.tmpl` |
+| Touch ID for sudo | `post-packages` hook -> `scripts/touchid-sudo.sh` (backs up and preserves existing rules, reattach above tid, replaces the nix symlink; hook, because `[bootstrap.files]` has no backup/merge and the file is a symlink here) |
+| Dock on the right | `[bootstrap.settings.macos.dock] orientation = "right"` |
+| Finder prefs | `[bootstrap.settings.macos.finder] preferred_view_style = "list"` (Nlsv) and `defaults."com.apple.finder".FXDefaultSearchScope = "SCcf"` |
+| Dock app order | `scripts/dock.sh` (dockutil; the native `dock.apps` requires every app to exist, but the VM/PWAs may not yet) |
+| git config | `dotfiles/gitconfig.tera` (Tera template; credential helper = mise shim path), `dotfiles/git/ignore` |
+| zsh | `dotfiles/zshrc`, `dotfiles/zprofile` |
+| VS Code | `merge = true` JSONC entry for settings.json (mise owns only the keys we ship; the app and your edits keep the rest), `scripts/vscode-extensions.sh` |
 
 Notes:
-- The `.chezmoiscripts` templates were not rendered or run (chezmoi was not available when written).
-- `brew bundle` is run with `--no-upgrade` and never `--cleanup`/`--zap`.
-- `gh` is in mise. The git credential helper therefore points at the mise shim (`~/.local/share/mise/shims/gh`), which works for non-interactive git (IDEs) once `mise install` has run; `home/dot_zprofile` also activates shims for login/non-interactive shells.
-- hugo uses `aqua:gohugoio/hugo/hugo-extended` (the extended build; verified `+extended`).
-- Services: nothing is running under `brew services` on the old machine (checked: jupyterlab, podman, redis are all `none`). mise-installed redis/podman are plain binaries; launchd services via `brew services` are not available for them. If you start relying on that, move the tool back to the Brewfile.
-- conda-forge packages require mise `experimental = true` (set in the config).
-- `mise install` uses the GitHub API; set `GITHUB_TOKEN` (e.g. `export GITHUB_TOKEN=$(gh auth token)`) on first run to avoid rate limits. `go:` and `npm:` tools need go/node installed first; if a first `mise install` fails on those, simply re-run it.
-- If `brew bundle` has failures (e.g. a cask), `chezmoi apply` continues; rerun `brew bundle install --no-upgrade --file=<repo>/Brewfile`.
-- On this machine `/etc/pam.d/sudo_local` is a nix symlink into `/etc/static`; the touchid script replaces it with a regular file. The `pam_reattach.so` path is taken from `$(brew --prefix)/lib/pam/`; the line is skipped if the file is absent.
-- `~/.config/git/config`, `~/.config/git/ignore` and `~/.zshenv` are currently home-manager symlinks into `/nix/store`; remove the dangling links as part of cutover (below).
-- Dock: the script skips missing items. Re-run it after the Parallels VM and Edge apps exist (`chezmoi state delete-bucket --bucket=scriptState`, then `chezmoi apply`, or edit the script). Teams is installed outside brew and is NOT in the Brewfile (a cask would conflict); install it manually.
-- The `buo/cask-upgrade` tap (`brew cu`) is dropped on purpose.
+- **Hooks and the task run on every `mise bootstrap`**, so each script is idempotent and cheap (dock.sh hashes the desired list; the extension script installs only missing ones; touchid compares before using sudo).
+- **Re-running:** `mise -C ~/.dotfiles bootstrap` (after a one-time `mise trust ~/.dotfiles`, which bootstrap.sh does). Re-run it after the Parallels VM and Edge apps exist so the Dock picks them up. To pull repo updates: `mise bootstrap --from <url> --from-dir ~/.dotfiles --update`.
+- **Packages never upgrade.** Docs: `apply` "installs missing packages but does not upgrade". Upgrades only happen with `mise bootstrap --upgrade` / `mise bootstrap packages upgrade`; do not use them (see the Outlook section). `~/bin/update.sh` upgrades with plain `brew upgrade` (no `--greedy`, so self-updating casks like microsoft-office are skipped) and `mise upgrade`.
+- `gh` is in mise. The git credential helper points at the mise shim (`$HOME/.local/share/mise/shims/gh`), which works for non-interactive git (IDEs) once tools are installed; `zprofile` also activates shims for login shells.
+- hugo uses `aqua:gohugoio/hugo/hugo-extended` (extended build).
+- Services: nothing runs under `brew services` on the old machine (jupyterlab, podman, redis all `none`). mise-installed redis/podman are plain binaries; launchd services are not available for them.
+- conda-forge packages need mise `experimental = true` (set in the config). `mise install` uses the GitHub API; set `GITHUB_TOKEN` (e.g. `export GITHUB_TOKEN=$(gh auth token)`) on first run to avoid rate limits. If `go:`/`npm:` tools fail on the first pass, re-run `mise bootstrap`.
+- `yubico-yubikey-manager` was removed from homebrew-cask (its API entry 404s; mise needs the API), so it is not declared. The installed copy is untouched.
+- On this machine `/etc/pam.d/sudo_local`, `~/.zshenv`, `~/.config/git/{config,ignore}` may be nix/home-manager symlinks. `[dotfiles]` copy mode replaces a symlink with a regular file; remove dangling links at cutover (below).
+- Existing differing dotfiles (e.g. a live `~/.zshrc`, `~/.config/mise/config.toml`, `~/.gitconfig`) are overwritten after confirmation (or `--yes`). Back them up first. mise also keeps dotfile history (`mise dot undo`) once a checkpoint exists.
+- Dotfiles history/auto-sync is NOT enabled. This repo is public and the author of the feature warns against public repos with auto-sync (secrets can leak into history). To keep local-only history, run `mise dot track <file>` (no `mise dot origin set`).
+- Teams is installed outside brew; it is not declared (a cask would conflict). It is added to the Dock only if present.
 
 ## 2. WARNING: Microsoft Outlook
 
-**Root cause.** `brew cu -a` (and `brew upgrade --greedy`) reinstalls `microsoft-office` from its full
+**Root cause.** `brew cu -a` (and `brew upgrade --greedy`, and `mise bootstrap --upgrade` / `mise bootstrap packages upgrade`) can reinstall `microsoft-office` from its full
 `.pkg`, which resets the Outlook profile and wipes all accounts and signatures.
 
 **Second root cause: nix-darwin zap.** `flake.nix` used `homebrew.onActivation.cleanup = "zap"`. The
 `microsoft-office`/Outlook cask zap stanza trashes `~/Library/Group Containers/UBF8T346G9.Office`,
 `~/Library/Containers/com.microsoft.Outlook` and `com.microsoft.Outlook.plist`. `flake.nix` is now
 neutered (`cleanup = "none"`, no upgrade/autoUpdate), but **never run `darwin-rebuild` again**.
-Also, home-manager's `backupFileExtension = "backup"` can rename or clobber chezmoi-managed files.
-nix-darwin must be retired/neutered before the first `chezmoi apply`.
+Also, home-manager's `backupFileExtension = "backup"` can rename or clobber mise-managed dotfiles.
+nix-darwin must be retired/neutered before the first `mise bootstrap`.
 
 **Rule.** Never upgrade `microsoft-office` through brew. Updates come from Microsoft AutoUpdate only.
-`~/bin/update.sh` (managed here) runs `brew update && brew upgrade && brew cleanup` then `mise upgrade`.
+`~/bin/update.sh` (deployed by `[dotfiles]`) runs `brew update && brew upgrade && brew cleanup` then `mise upgrade`.
 
 **Where the data lives.**
 - `~/Library/Group Containers/UBF8T346G9.Office` (includes `Outlook 15 Profiles`)
@@ -59,7 +87,7 @@ refuses to overwrite existing directories without `--force`.
 **Moving to the new laptop.**
 1. Quit Outlook on the old machine and run `backup-outlook.sh`.
 2. Copy the archive to the new machine.
-3. Install Office via the Brewfile (chezmoi apply / `brew bundle`). Do NOT launch Outlook.
+3. Install Office via `mise bootstrap` (the `brew-cask:microsoft-office` package). Do NOT launch Outlook.
 4. Run `restore-outlook.sh <archive> --force` (moves any fresh install data aside).
 5. Launch Outlook.
 
@@ -77,7 +105,7 @@ data until verified.
 
 ## 3. Edge apps and the Parallels VM
 
-- Edge web apps (Canvas, Spotify): `run_onchange_after_60-edge-pwas.sh` is best-effort and UNVERIFIED (create-pwa.sh now launches Edge via `open -na` so it does not block); the
+- Edge web apps (Canvas, Spotify): `scripts/edge-pwas.sh` (run by the bootstrap task) is best-effort and UNVERIFIED (create-pwa.sh now launches Edge via `open -na` so it does not block); the
   Edge flags it uses may not produce a real app bundle. The reliable path: Edge > ... > Apps >
   Install this site as an app. URLs: Canvas `https://unt.instructure.com/`, Spotify `https://open.spotify.com/`.
 - Parallels VM (`~/Parallels/Windows 11.pvm`) must be copied/restored manually. Install the
@@ -89,12 +117,19 @@ data until verified.
    gcloud, nmap, exiftool), check `command -v <tool>` resolves to a mise shim/path or `/opt/homebrew`,
    not `/nix` or `/run/current-system`.
 2. Uninstall nix-darwin and remove `/nix`.
-3. ONLY after `command -v` verification, `brew uninstall` the formulae mise now owns (check dependents first with `brew uses --installed <formula>`; `brew uninstall` will refuse if something depends on it): agg arm-none-eabi-gcc automake bazelisk changie direnv furkankly/tap/zoetrope glow gradle herdr httpie jupyterlab kotlin maven ncdu ninja open-ocd openapi-generator opentofu podman poppler redis rtk sevenzip shellcheck tinygo tmux tree uv worktrunk xgo youtube-dl yt-dlp go node python@3.13 python@3.15 and, if installed, gh jq yq htop wget watch coreutils vhs exiftool hugo protobuf. Then `brew untap furkankly/tap goreleaser/tap tinygo-org/tools buo/cask-upgrade`.
+3. ONLY after `command -v` verification, `brew uninstall` the formulae mise `[tools]` now owns (check dependents first with `brew uses --installed <formula>`; `brew uninstall` will refuse if something depends on it): agg arm-none-eabi-gcc automake bazelisk changie direnv furkankly/tap/zoetrope glow gradle herdr httpie jupyterlab kotlin maven ncdu ninja open-ocd openapi-generator opentofu podman poppler redis rtk sevenzip shellcheck tinygo tmux tree uv worktrunk xgo youtube-dl yt-dlp go node python@3.13 python@3.15 and, if installed, gh jq yq htop wget watch coreutils vhs exiftool hugo protobuf. Then `brew untap furkankly/tap goreleaser/tap tinygo-org/tools buo/cask-upgrade`.
 4. Remove dangling home-manager links (`~/.zshenv`, `~/.config/git/config`, `~/.config/git/ignore`) if they are symlinks into `/nix/store`.
 5. In a follow-up PR, delete `flake.nix`, `flake.lock`, and `nix.conf`.
 
-## 5. Replacing the live ~/bin/update.sh
+## 5. Replacing the live ~/bin/update.sh (safety-critical)
 
-The existing live `~/bin/update.sh` contains `brew cu -a`. The new one also unsets `HOMEBREW_UPGRADE_GREEDY*`. chezmoi will prompt/refuse if the target
-differs, so either delete it first or run `chezmoi apply --force`. Confirm the new file has no `brew cu`
-before running `update`.
+The existing live `~/bin/update.sh` contains `brew cu -a`. How the old copy cannot survive:
+1. `[dotfiles]` deploys `~/bin/update.sh` in `copy` mode. Verified in an isolated run: with a differing old file,
+   non-interactive apply **stops with "would overwrite ~/bin/update.sh ... pass --yes"** (the old file is left untouched, never silently kept as the active script
+   and the run fails); with `--yes` (or interactive confirmation) it is replaced by the new content.
+2. A `post-dotfiles` hook (`scripts/check-update-sh.sh`) fails the whole bootstrap if any non-comment line of
+   `~/bin/update.sh` still contains `brew cu`, `cask-upgrade` or `--greedy`. Verified against an old-style file (exit 1).
+3. Belt and braces: `rm ~/bin/update.sh` before the first run is also fine.
+
+The new script unsets `HOMEBREW_UPGRADE_GREEDY*` and never calls `brew cu`. Confirm with
+`grep -v '^#' ~/bin/update.sh` before running `update`.

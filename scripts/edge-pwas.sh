@@ -8,7 +8,7 @@ set -uo pipefail
 CANVAS_URL="https://unt.instructure.com/"
 SPOTIFY_URL="https://open.spotify.com/"
 
-script="$HOME/bin/create-pwa.sh"
+script="$HOME/bin/create-pwa.sh"  # deployed by [dotfiles] (copy of dotfiles/bin/create-pwa.sh)
 failed=0
 
 create() {

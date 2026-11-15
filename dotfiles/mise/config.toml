@@ -1,13 +1,15 @@
-# mise owns every CLI/runtime that has a working arm64 backend. Homebrew is reduced to
-# casks (GUI apps; mise has no .app/.dmg/.pkg backend), bootstrap (mise, chezmoi) and the
-# few formulae listed in the Brewfile with a reason. Each tool lives in exactly one place.
+# Global mise config, deployed to ~/.config/mise/config.toml by [dotfiles] in the repo's mise.toml.
+# mise owns every CLI/runtime that has a working arm64 backend. Homebrew (driven by
+# [bootstrap.packages] in the repo's mise.toml) is reduced to casks (GUI apps; mise has no
+# .app/.dmg/.pkg backend) and nine formulae that mise cannot install as prebuilt binaries.
+# Each tool lives in exactly one place.
 #
 # Backend order used: registry short name (aqua/core) -> aqua:/github: -> go:/npm: -> conda:.
 # - conda: (conda-forge, osx-arm64) is used for native tools with no release binaries.
 #   It is an experimental mise backend, hence `experimental = true`.
 # - github:/aqua: tools download release binaries; the xpack toolchains are the arm64 builds.
 # - Notes: redis/podman are plain binaries (no launchd service; `brew services` does not
-#   manage them). Verified with an isolated mise 2026.11.6 on macOS arm64 (see docs/MIGRATION.md).
+#   manage them). Verified with an isolated mise on macOS arm64 (see docs/MIGRATION.md).
 
 [settings]
 experimental = true
@@ -44,7 +46,7 @@ changie = "latest"
 protoc = "latest"
 golangci-lint = "latest"
 vhs = "latest"
-ttyd = "latest"                  # vhs runtime dependency
+"conda:ttyd" = "latest"            # vhs runtime dependency (mise registry ttyd has no macOS build)
 ffmpeg = "latest"                # vhs runtime dependency
 rtk = "latest"
 herdr = "latest"
