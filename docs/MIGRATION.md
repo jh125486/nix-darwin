@@ -13,7 +13,6 @@ dotfiles/               sources deployed by [dotfiles] (zshrc, zprofile, gitconf
 scripts/                idempotent helper scripts called from hooks / the bootstrap task
 bootstrap.sh            new-Mac entry point (Homebrew -> mise -> `mise bootstrap --from`)
 docs/MIGRATION.md      this file
-flake.nix, flake.lock   retired nix-darwin (neutered; delete in a follow-up PR)
 ```
 
 **Why `--from` and not `--adopt`.** Per the mise docs, `--adopt <repo>` either clones a repo into
@@ -66,12 +65,12 @@ Notes:
 **Root cause.** `brew cu -a` (and `brew upgrade --greedy`, and `mise bootstrap --upgrade` / `mise bootstrap packages upgrade`) can reinstall `microsoft-office` from its full
 `.pkg`, which resets the Outlook profile and wipes all accounts and signatures.
 
-**Second root cause: nix-darwin zap.** `flake.nix` used `homebrew.onActivation.cleanup = "zap"`. The
+**Second root cause: nix-darwin zap.** The old nix-darwin flake used `homebrew.onActivation.cleanup = "zap"`. The
 `microsoft-office`/Outlook cask zap stanza trashes `~/Library/Group Containers/UBF8T346G9.Office`,
-`~/Library/Containers/com.microsoft.Outlook` and `com.microsoft.Outlook.plist`. `flake.nix` is now
-neutered (`cleanup = "none"`, no upgrade/autoUpdate), but **never run `darwin-rebuild` again**.
-Also, home-manager's `backupFileExtension = "backup"` can rename or clobber mise-managed dotfiles.
-nix-darwin must be retired/neutered before the first `mise bootstrap`.
+`~/Library/Containers/com.microsoft.Outlook` and `com.microsoft.Outlook.plist`. The flake is deleted from this repo,
+but on an EXISTING machine the old live `~/.config/nix` checkout may still contain it: **never run `darwin-rebuild` again.**
+Run `git pull` there (or remove that checkout) so the old flake is gone, and retire nix-darwin before the first `mise bootstrap`.
+Also, home-manager's `backupFileExtension = "backup"` could have renamed or clobbered dotfiles on that machine; check for `*.backup` files next to the mise-managed dotfiles.
 
 **Rule.** Never upgrade `microsoft-office` through brew. Updates come from Microsoft AutoUpdate only.
 `~/bin/update.sh` (deployed by `[dotfiles]`) runs `brew update && brew upgrade && brew cleanup` then `mise upgrade`.
@@ -116,10 +115,9 @@ data until verified.
 1. For each former nix tool (aws, gh, jq, yq, buf, goreleaser, hugo, protoc, golangci-lint, scc, vhs, zig, rustc, cargo,
    gcloud, nmap, exiftool), check `command -v <tool>` resolves to a mise shim/path or `/opt/homebrew`,
    not `/nix` or `/run/current-system`.
-2. Uninstall nix-darwin and remove `/nix`.
+2. Make sure the old `~/.config/nix` checkout no longer has the flake (`git pull` or remove it), then uninstall nix-darwin and remove `/nix`. Never run `darwin-rebuild` again.
 3. ONLY after `command -v` verification, `brew uninstall` the formulae mise `[tools]` now owns (check dependents first with `brew uses --installed <formula>`; `brew uninstall` will refuse if something depends on it): agg arm-none-eabi-gcc automake bazelisk changie direnv furkankly/tap/zoetrope glow gradle herdr httpie jupyterlab kotlin maven ncdu ninja open-ocd openapi-generator opentofu podman poppler redis rtk sevenzip shellcheck tinygo tmux tree uv worktrunk xgo youtube-dl yt-dlp go node python@3.13 python@3.15 and, if installed, gh jq yq htop wget watch coreutils vhs exiftool hugo protobuf. Then `brew untap furkankly/tap goreleaser/tap tinygo-org/tools buo/cask-upgrade`.
 4. Remove dangling home-manager links (`~/.zshenv`, `~/.config/git/config`, `~/.config/git/ignore`) if they are symlinks into `/nix/store`.
-5. In a follow-up PR, delete `flake.nix`, `flake.lock`, and `nix.conf`.
 
 ## 5. Replacing the live ~/bin/update.sh (safety-critical)
 
