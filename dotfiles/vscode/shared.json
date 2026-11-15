@@ -1,0 +1,11 @@
+{
+  "window.zoomLevel": -0.5,
+  "editor.formatOnSave": true,
+  "files.autoSave": "onFocusChange",
+  "workbench.colorTheme": "Dark (Visual Studio)",
+  "go.coverOnSave": true,
+  "go.lintTool": "golangci-lint",
+  "go.lintOnSave": "package",
+  "go.testArgs": ["-race", "-cover", "-shuffle=on"],
+  "git.ignoreLimitWarning": true
+}
