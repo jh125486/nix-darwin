@@ -49,7 +49,7 @@ these and publishes arm64 bottles. Casks stay because mise `[tools]` has no .app
 Notes:
 - **Hooks and the task run on every `mise bootstrap`**, so each script is idempotent and cheap (dock.sh hashes the desired list; the extension script installs only missing ones; touchid compares before using sudo).
 - **Re-running:** `mise -C ~/.dotfiles bootstrap` (after a one-time `mise trust ~/.dotfiles`, which bootstrap.sh does). Re-run it after the Parallels VM and Edge apps exist so the Dock picks them up. To pull repo updates: `mise bootstrap --from <url> --from-dir ~/.dotfiles --update`.
-- **Packages never upgrade.** Docs: `apply` "installs missing packages but does not upgrade". Upgrades only happen with `mise bootstrap --upgrade` / `mise bootstrap packages upgrade`; do not use them (see the Outlook section). `~/bin/update.sh` upgrades with plain `brew upgrade` (no `--greedy`, so self-updating casks like microsoft-office are skipped) and `mise upgrade`.
+- **Packages never upgrade.** Docs: `apply` "installs missing packages but does not upgrade". Upgrades only happen with `mise bootstrap --upgrade` / `mise bootstrap packages upgrade`; do not use them (see the Outlook section). The `update` alias (in `~/.zshrc`) upgrades with plain `brew upgrade` (no `--greedy`, so self-updating casks like microsoft-office are skipped) and `mise upgrade`.
 - `gh` is in mise. The git credential helper points at the mise shim (`$HOME/.local/share/mise/shims/gh`), which works for non-interactive git (IDEs) once tools are installed; `zprofile` also activates shims for login shells.
 - hugo uses `aqua:gohugoio/hugo/hugo-extended` (extended build).
 - Services: nothing runs under `brew services` on the old machine (jupyterlab, podman, redis all `none`). mise-installed redis/podman are plain binaries; launchd services are not available for them.
@@ -73,7 +73,7 @@ Run `git pull` there (or remove that checkout) so the old flake is gone, and ret
 Also, home-manager's `backupFileExtension = "backup"` could have renamed or clobbered dotfiles on that machine; check for `*.backup` files next to the mise-managed dotfiles.
 
 **Rule.** Never upgrade `microsoft-office` through brew. Updates come from Microsoft AutoUpdate only.
-`~/bin/update.sh` (deployed by `[dotfiles]`) runs `brew update && brew upgrade && brew cleanup` then `mise upgrade`.
+The `update` alias in `~/.zshrc` (from `dotfiles/zshrc`) runs `brew update && brew upgrade && brew cleanup` (with `HOMEBREW_UPGRADE_GREEDY*` unset) then `mise upgrade`.
 
 **Where the data lives.**
 - `~/Library/Group Containers/UBF8T346G9.Office` (includes `Outlook 15 Profiles`)
@@ -119,15 +119,14 @@ data until verified.
 3. ONLY after `command -v` verification, `brew uninstall` the formulae mise `[tools]` now owns (check dependents first with `brew uses --installed <formula>`; `brew uninstall` will refuse if something depends on it): agg arm-none-eabi-gcc automake bazelisk changie direnv furkankly/tap/zoetrope glow gradle herdr httpie jupyterlab kotlin maven ncdu ninja open-ocd openapi-generator opentofu podman poppler redis rtk sevenzip shellcheck tinygo tmux tree uv worktrunk xgo youtube-dl yt-dlp go node python@3.13 python@3.15 and, if installed, gh jq yq htop wget watch coreutils vhs exiftool hugo protobuf. Then `brew untap furkankly/tap goreleaser/tap tinygo-org/tools buo/cask-upgrade`.
 4. Remove dangling home-manager links (`~/.zshenv`, `~/.config/git/config`, `~/.config/git/ignore`) if they are symlinks into `/nix/store`.
 
-## 5. Replacing the live ~/bin/update.sh (safety-critical)
+## 5. Removing the live ~/bin/update.sh (safety-critical)
 
-The existing live `~/bin/update.sh` contains `brew cu -a`. How the old copy cannot survive:
-1. `[dotfiles]` deploys `~/bin/update.sh` in `copy` mode. Verified in an isolated run: with a differing old file,
-   non-interactive apply **stops with "would overwrite ~/bin/update.sh ... pass --yes"** (the old file is left untouched, never silently kept as the active script
-   and the run fails); with `--yes` (or interactive confirmation) it is replaced by the new content.
-2. A `post-dotfiles` hook (`scripts/check-update-sh.sh`) fails the whole bootstrap if any non-comment line of
-   `~/bin/update.sh` still contains `brew cu`, `cask-upgrade` or `--greedy`. Verified against an old-style file (exit 1).
+There is no `update.sh` any more: updating is the `update` alias in `~/.zshrc`. The existing live `~/bin/update.sh`
+contains `brew cu -a` (wipes Outlook), so it must not survive. How it is removed:
+1. `[dotfiles]` has `"~/bin/update.sh" = { mode = "absent" }`. Verified with a real mise v2026.11.9 arm64 binary in an
+   isolated HOME: `mise dot apply --dry-run` prints `rm ~/bin/update.sh`; a real apply with no TTY and no `--yes`
+   deletes the file (no prompt, no content comparison, permanent delete, not Trash); a second apply is a no-op.
+   `mise dot undo` can restore it, so do not run that.
+2. A `post-dotfiles` hook (`scripts/check-update-sh.sh`) fails the whole bootstrap if `~/bin/update.sh` still exists and
+   any non-comment line contains `brew cu`, `cask-upgrade` or `--greedy`. Verified exit 1 against an old-style file, 0 after removal.
 3. Belt and braces: `rm ~/bin/update.sh` before the first run is also fine.
-
-The new script unsets `HOMEBREW_UPGRADE_GREEDY*` and never calls `brew cu`. Confirm with
-`grep -v '^#' ~/bin/update.sh` before running `update`.

@@ -21,10 +21,10 @@
 "~/Library/Application Support/Code/User/settings.json/shared" = { source = "dotfiles/vscode/shared.json", merge = true, format = "jsonc" }
 
 # ~/bin scripts: regular executable copies.
-# update.sh REPLACES the old live ~/bin/update.sh (which ran `brew cu -a`, wiping Outlook).
-# copy mode overwrites a differing file after confirmation (interactive prompt, or --yes);
-# non-interactively without --yes it stops. scripts/check-update-sh.sh then fails the run if `brew cu` survives.
-"~/bin/update.sh" = { source = "dotfiles/bin/update.sh", mode = "copy", permissions = "0755" }
+# The old update.sh is gone (the `update` alias lives in ~/.zshrc). The OLD live ~/bin/update.sh ran
+# `brew cu -a`, which wipes Outlook, so mise REMOVES it from every machine (absent: no prompt, no content compare).
+# scripts/check-update-sh.sh (post-dotfiles hook) fails the run if it somehow survives with `brew cu`.
+"~/bin/update.sh" = { mode = "absent" }
 "~/bin/backup-outlook.sh" = { source = "dotfiles/bin/backup-outlook.sh", mode = "copy", permissions = "0755" }
 "~/bin/restore-outlook.sh" = { source = "dotfiles/bin/restore-outlook.sh", mode = "copy", permissions = "0755" }
 "~/bin/create-pwa.sh" = { source = "dotfiles/bin/create-pwa.sh", mode = "copy", permissions = "0755" }
@@ -45,7 +45,7 @@ FXDefaultSearchScope = "SCcf"          # search the current folder
 # Hooks (run every time; keep idempotent) and the bootstrap task
 # ---------------------------------------------------------------------------
 [bootstrap.hooks]
-# Fail loudly if the old update.sh (brew cu) is still in place.
+# Fail loudly if the old ~/bin/update.sh (brew cu) is still in place.
 post-dotfiles = "bash {{ config_root }}/scripts/check-update-sh.sh"
 post-defaults = "killall Dock Finder || true"
 
