@@ -28,5 +28,9 @@ else
   mise bootstrap --from "$repo" --from-dir "$dir"
 fi
 
+# Make sure every tool in ~/.config/mise/config.toml (deployed above) is installed.
+# Safe to repeat: already-installed tools are skipped.
+mise -C "$dir" install
+
 # Re-run later with:  mise -C "$dir" bootstrap   (needs the checkout to be trusted)
 mise trust "$dir"
