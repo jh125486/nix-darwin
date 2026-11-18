@@ -9,7 +9,7 @@ and `mise bootstrap` for casks, macOS defaults and setup scripts. The old nix-da
 somewhere that survives (OneDrive, external disk). Outlook accounts and signatures took days to rebuild once.
 Details and the restore order: [docs/MIGRATION.md](docs/MIGRATION.md#2-warning-microsoft-outlook).
 
-On the new Mac, open **Terminal** (it needs a real terminal: Touch ID sudo and Wireshark ask for your password) and run:
+On the new Apple Silicon Mac (the scripts hard-code `/opt/homebrew`; Intel is not supported), open **Terminal** (it needs a real terminal: Touch ID sudo and Wireshark ask for your password) and run:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jh125486/nix-darwin/main/bootstrap.sh -o /tmp/bootstrap.sh
