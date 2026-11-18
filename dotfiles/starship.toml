@@ -1,0 +1,20 @@
+# Starship prompt, deployed to ~/.config/starship.toml by [dotfiles] in the repo's mise.toml.
+# Shows: directory (the last path part is the worktree name inside ~/.config/*-worktrees), git branch and status,
+# command duration, and a red/green prompt character. Nothing else, to keep it fast.
+add_newline = false
+command_timeout = 500
+format = "$directory$git_branch$git_status$cmd_duration$line_break$character"
+
+[directory]
+truncation_length = 3
+truncate_to_repo = false
+
+[git_branch]
+format = "on [$symbol$branch]($style) "
+
+[git_status]
+format = "([$all_status$ahead_behind]($style) )"
+
+[cmd_duration]
+min_time = 3000
+format = "took [$duration]($style) "

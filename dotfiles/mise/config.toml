@@ -20,6 +20,7 @@ go = "latest"
 node = "latest"
 python = "latest"
 uv = "latest"
+starship = "latest"      # prompt (branch + git status); config in dotfiles/starship.toml
 rust = "latest"
 zig = "latest"
 java = "temurin-21"      # required by gradle, kotlin, maven, openapi-generator
