@@ -49,7 +49,7 @@ these and publishes arm64 bottles. Casks stay because mise `[tools]` has no .app
 Notes:
 - **Hooks and the task run on every `mise bootstrap`**, so each script is idempotent and cheap (dock.sh hashes the desired list; the extension script installs only missing ones; touchid compares before using sudo).
 - **Re-running:** `mise -C ~/.dotfiles bootstrap` (after a one-time `mise trust ~/.dotfiles`, which bootstrap.sh does). Re-run it after the Parallels VM and Edge apps exist so the Dock picks them up. To pull repo updates: `mise bootstrap --from <url> --from-dir ~/.dotfiles --update`.
-- **Packages never upgrade.** Docs: `apply` "installs missing packages but does not upgrade". Upgrades only happen with `mise bootstrap --upgrade` / `mise bootstrap packages upgrade`; do not use them (see the Outlook section). The `update` alias (in `~/.zshrc`) upgrades with plain `brew upgrade` (no `--greedy`, so self-updating casks like microsoft-office are skipped) and `mise upgrade`.
+- **Packages never upgrade on apply.** Docs: `apply` "installs missing packages but does not upgrade". Upgrades are separate. `mise bootstrap packages upgrade` only upgrades casks that mise itself installed; casks installed by Homebrew print "installed and managed by Homebrew; leaving unchanged". Called with no names it upgrades EVERY declared package, including microsoft-office when mise owns it (e.g. after a fresh-laptop bootstrap), which wipes Outlook, so never run it bare or use `mise bootstrap --upgrade`. The `update` function (in `~/.zshrc`) runs plain `brew upgrade` (no `--greedy`; brew-owned casks), then `mise bootstrap packages upgrade --yes <explicit list of the declared casks minus every microsoft-* cask>`, then `mise upgrade`. It refuses to run the mise step if the list comes out empty.
 - `gh` is in mise. The git credential helper points at the mise shim (`$HOME/.local/share/mise/shims/gh`), which works for non-interactive git (IDEs) once tools are installed; `zprofile` also activates shims for login shells.
 - hugo is the plain `hugo` mise tool: since 0.170 there is a single binary (the extended edition was removed). SCSS/Sass themes need Dart Sass installed separately (not managed here).
 - Services: nothing runs under `brew services` on the old machine (jupyterlab, podman, redis all `none`). mise-installed redis/podman are plain binaries; launchd services are not available for them.
@@ -73,7 +73,7 @@ Run `git pull` there (or remove that checkout) so the old flake is gone, and ret
 Also, home-manager's `backupFileExtension = "backup"` could have renamed or clobbered dotfiles on that machine; check for `*.backup` files next to the mise-managed dotfiles.
 
 **Rule.** Never upgrade `microsoft-office` through brew. Updates come from Microsoft AutoUpdate only.
-The `update` alias in `~/.zshrc` (from `dotfiles/zshrc`) runs `brew update && brew upgrade && brew cleanup` (with `HOMEBREW_UPGRADE_GREEDY*` unset) then `mise upgrade`.
+The `update` function in `~/.zshrc` (from `dotfiles/zshrc`) runs `brew update && brew upgrade && brew cleanup` (with `HOMEBREW_UPGRADE_GREEDY*` unset), then `mise bootstrap packages upgrade --yes` with an explicit cask list that excludes every `microsoft-*` cask, then `mise upgrade`.
 
 **Where the data lives.**
 - `~/Library/Group Containers/UBF8T346G9.Office` (includes `Outlook 15 Profiles`)
