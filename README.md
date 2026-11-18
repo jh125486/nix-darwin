@@ -33,7 +33,7 @@ Then, in this order:
 
 ## Existing machine
 
-Re-run setup: `mise -C ~/.dotfiles bootstrap`. Update everything with the `update` alias (in `~/.zshrc`).
+Re-run setup: `mise -C ~/.dotfiles bootstrap`. Update everything with the `update` function (in `~/.zshrc`).
 
 **Never** use `brew cu`, `brew upgrade --greedy` or `mise bootstrap --upgrade`: they can reinstall
 Microsoft Office and wipe Outlook.
