@@ -57,8 +57,9 @@ run = "bash {{ config_root }}/scripts/touchid-sudo.sh"
 
 # Runs after packages, dotfiles, defaults and tools, with [tools] on PATH.
 [tasks.bootstrap]
-description = "VS Code extensions, Edge apps, Dock order"
+description = "Brew-only casks, VS Code extensions, Edge apps, Dock order"
 run = [
+  "bash {{ config_root }}/scripts/brew-only-casks.sh",
   "bash {{ config_root }}/scripts/vscode-extensions.sh",
   "bash {{ config_root }}/scripts/edge-pwas.sh",
   "bash {{ config_root }}/scripts/dock.sh",
@@ -85,7 +86,6 @@ run = [
 
 "brew-cask:1password" = "latest"
 "brew-cask:1password-cli" = "latest"
-"brew-cask:adobe-creative-cloud" = "latest"
 "brew-cask:bartender" = "latest"
 "brew-cask:chatgpt" = "latest"
 "brew-cask:claude" = "latest"
@@ -93,13 +93,11 @@ run = [
 "brew-cask:copilot-cli" = "latest"
 "brew-cask:dbeaver-community" = "latest"
 "brew-cask:discord" = "latest"
-"brew-cask:displaylink" = "latest"
 "brew-cask:docker-desktop" = "latest"
 "brew-cask:drawio" = "latest"
 "brew-cask:ghostty" = "latest"
 "brew-cask:github" = "latest"
 "brew-cask:gcloud-cli" = "latest"        # mise gcloud is a third-party vfox plugin; the cask is official
-"brew-cask:google-drive" = "latest"
 "brew-cask:grandperspective" = "latest"
 "brew-cask:hoppscotch" = "latest"
 "brew-cask:inkscape" = "latest"
@@ -107,8 +105,6 @@ run = [
 "brew-cask:jetbrains-toolbox" = "latest"
 "brew-cask:keepingyouawake" = "latest"
 "brew-cask:libreoffice" = "latest"
-"brew-cask:logi-options+" = "latest"
-"brew-cask:logitech-presentation" = "latest"
 "brew-cask:macshot" = "latest"
 "brew-cask:microsoft-auto-update" = "latest"
 "brew-cask:microsoft-edge" = "latest"
@@ -128,7 +124,6 @@ run = [
 "brew-cask:shottr" = "latest"
 "brew-cask:signal" = "latest"
 "brew-cask:stats" = "latest"
-"brew-cask:steam" = "latest"
 "brew-cask:visual-studio-code" = "latest"
 "brew-cask:whatsapp" = "latest"
 "brew-cask:wireshark-app" = "latest"

@@ -29,7 +29,8 @@ Then, in this order:
 1. **Restore Outlook before opening it for the first time:** `~/bin/restore-outlook.sh <archive> --force`.
    Expect to sign in to each account again (keychain tokens are not in the backup).
 2. Sign in to `gh`, 1Password and the other apps.
-3. Recreate the Parallels VM and the Edge apps manually (the Edge apps script is best-effort), then re-run `~/.dotfiles/scripts/dock.sh`.
+3. Run `open /opt/homebrew/Caskroom/logitech-presentation/*/` and click through the installer (Logitech Presentation has only a manual installer).
+4. Recreate the Parallels VM and the Edge apps manually (the Edge apps script is best-effort), then re-run `~/.dotfiles/scripts/dock.sh`.
 
 ## Existing machine
 
