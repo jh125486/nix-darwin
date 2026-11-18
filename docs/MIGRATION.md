@@ -110,14 +110,22 @@ Notes:
 - Parallels VM (`~/Parallels/Windows 11.pvm`) must be copied/restored manually. Install the
   `parallels` cask first; the dock item is skipped until the VM exists.
 
-## 4. Nix retirement checklist
+## 4. Nix retirement (done on the original machine, 2026-11-18)
+
+Kept as a record and as a checklist if another machine still has nix.
 
 1. For each former nix tool (aws, gh, jq, yq, buf, goreleaser, hugo, protoc, golangci-lint, scc, vhs, zig, rustc, cargo,
-   gcloud, nmap, exiftool), check `command -v <tool>` resolves to a mise shim/path or `/opt/homebrew`,
-   not `/nix` or `/run/current-system`.
-2. Make sure the old `~/.config/nix` checkout no longer has the flake (`git pull` or remove it), then uninstall nix-darwin and remove `/nix`. Never run `darwin-rebuild` again.
-3. ONLY after `command -v` verification, `brew uninstall` the formulae mise `[tools]` now owns (check dependents first with `brew uses --installed <formula>`; `brew uninstall` will refuse if something depends on it): agg arm-none-eabi-gcc automake bazelisk changie direnv furkankly/tap/zoetrope glow gradle herdr httpie jupyterlab kotlin maven ncdu ninja open-ocd openapi-generator opentofu podman poppler redis rtk sevenzip shellcheck tinygo tmux tree uv worktrunk xgo youtube-dl yt-dlp go node python@3.13 python@3.15 and, if installed, gh jq yq htop wget watch coreutils vhs exiftool hugo protobuf. Then `brew untap furkankly/tap goreleaser/tap tinygo-org/tools buo/cask-upgrade`.
-4. Remove dangling home-manager links (`~/.zshenv`, `~/.config/git/config`, `~/.config/git/ignore`) if they are symlinks into `/nix/store`.
+   gcloud, nmap, exiftool), check that `mise which <tool>` resolves (use `MISE_EXEC_AUTO_INSTALL=false` so the check does not install anything).
+2. Move the old `~/.config/nix` checkout out of the way (it was moved to `~/Backups/nix-config-old-<date>`, which also keeps any uncommitted edits). Its flake has `cleanup = "zap"`, so never run `darwin-rebuild` from it.
+3. Remove symlinks that point into `/nix/store` from the home folder, and only those: `find ~/.zshenv ~/.vscode/extensions ~/Applications ~/.cache ~/.local/state -maxdepth 2 -type l -lname '/nix/store/*' -delete`. Real extension folders are not touched. Then remove `~/.nix-profile`, `~/.nix-channels`, `~/.nix-defexpr`, `~/.local/state/nix`.
+4. `brew uninstall` the formulae mise `[tools]` now owns, after confirming each binary with `mise which`. `brew uninstall` refuses if something depends on a formula. Keep `mise` and the `[bootstrap.packages]` formulae. Then `brew untap` the taps no longer needed (including `buo/cask-upgrade`, which provides `brew cu`), and review `brew autoremove -n` before running it, because it also removes orphaned dependencies you may use (pandoc, deno).
+5. Uninstall nix-darwin, then nix. Both need sudo and a real terminal:
+   - `sudo darwin-uninstaller` removes the nix-darwin `/etc` links and restores the `/etc/*.before-nix-darwin` files. It does not run brew, so it does not touch Outlook. `/etc/pam.d/sudo_local` survived because `scripts/touchid-sudo.sh` had already replaced the symlink with a regular file.
+   - `sudo /nix/nix-installer uninstall --no-confirm` (Determinate installer). Without `--no-confirm` it asks "Proceed?" and fails with "unable to read from stdin" when run through Claude Code's `!` prefix. It removes the daemons, the build users and the encrypted `Nix Store` APFS volume.
+   - Afterwards: reboot (or open a new terminal; shells started before still carry the old nix PATH), and check that `/run/current-system` and the Determinate LaunchDaemons are gone. An empty `/nix` mount point and an empty `/Applications/Nix Apps` may remain until reboot; `sudo rmdir "/Applications/Nix Apps"` removes the latter.
+6. Verify: `/etc/pam.d/sudo_local` still has `pam_reattach` above `pam_tid`, Outlook's containers are intact, `mise bootstrap plan` shows nothing to create.
+
+Casks that `mise bootstrap` installs through `brew-cask:` may show up in `brew doctor` as "Caskroom directories without valid metadata" (seen for `zed` and `hoppscotch`). The apps run; `brew upgrade` just cannot update them, so update those two from inside the app.
 
 ## 5. Removing the live ~/bin/update.sh (safety-critical)
 
