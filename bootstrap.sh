@@ -19,7 +19,8 @@ if ! command -v mise >/dev/null 2>&1; then
 fi
 
 # --from clones the repo to $dir and trusts its mise.toml for this run.
-# Without --yes, mise asks before replacing a differing dotfile (e.g. the old ~/bin/update.sh with `brew cu`); pass --yes for non-interactive runs.
+# The old ~/bin/update.sh (`brew cu`) is removed by an `absent` dotfiles entry; the `update` alias lives in ~/.zshrc.
+# mise asks before replacing other differing dotfiles; pass --yes for non-interactive runs.
 # Never pass --upgrade (it could reinstall microsoft-office and wipe Outlook).
 if [ -d "$dir/.git" ]; then
   mise bootstrap --from "$repo" --from-dir "$dir" --update
