@@ -33,13 +33,22 @@ unsetopt APPEND_HISTORY EXTENDED_HISTORY HIST_EXPIRE_DUPS_FIRST HIST_FIND_NO_DUP
 # NEVER `brew cu` / `--greedy` / `mise bootstrap --upgrade`, and never run `mise bootstrap packages upgrade` without
 # explicit package names: reinstalling microsoft-office from its .pkg wipes Outlook accounts and signatures.
 # Office updates come from Microsoft AutoUpdate only.
-# Casks that brew owns are upgraded by `brew upgrade` (self-updating ones are skipped: no --greedy); casks that mise
-# installed are upgraded by `mise bootstrap packages upgrade`, passed an explicit list WITHOUT any microsoft-* cask.
+# Current Homebrew upgrades `auto_updates` casks (like microsoft-office) on a plain `brew upgrade`, so the brew step sets
+# HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1 AND upgrades casks only by an explicit name list with every microsoft-* removed.
+# Casks that mise installed are upgraded by `mise bootstrap packages upgrade`, also with an explicit list minus microsoft-*.
+# The checkout is $DOTFILES_DIR (as in bootstrap.sh) or ~/.dotfiles.
 update() {
-  (unset HOMEBREW_UPGRADE_GREEDY HOMEBREW_UPGRADE_GREEDY_CASKS; brew update && brew upgrade && brew cleanup) || return
-  local -a pkgs
-  pkgs=(${(f)"$(grep -o '"brew-cask:[^"]*"' ~/.dotfiles/mise.toml | tr -d '"' | grep -v 'brew-cask:microsoft-')"})
+  local dir=${DOTFILES_DIR:-$HOME/.dotfiles}
+  local -a bcasks pkgs
+  (
+    unset HOMEBREW_UPGRADE_GREEDY HOMEBREW_UPGRADE_GREEDY_CASKS
+    export HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1
+    brew update && brew upgrade --formula && brew cleanup
+  ) || return
+  bcasks=(${(f)"$(brew outdated --cask --quiet | grep -v '^microsoft-')"})
+  (( $#bcasks )) && { HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1 brew upgrade --cask $bcasks || return; }
+  pkgs=(${(f)"$(grep -o '"brew-cask:[^"]*"' $dir/mise.toml | tr -d '"' | grep -v 'brew-cask:microsoft-')"})
   # Refuse to run with an empty list: mise would then upgrade EVERY package, including Office.
-  (( $#pkgs )) || { echo "update: no casks found in ~/.dotfiles/mise.toml; not upgrading casks" >&2; return 1; }
+  (( $#pkgs )) || { echo "update: no casks found in $dir/mise.toml; not upgrading mise casks" >&2; return 1; }
   mise bootstrap packages upgrade --yes $pkgs && mise upgrade
 }
