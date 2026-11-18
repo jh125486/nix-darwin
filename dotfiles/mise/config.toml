@@ -31,7 +31,7 @@ jq = "latest"
 yq = "latest"
 buf = "latest"
 goreleaser = "latest"
-"aqua:gohugoio/hugo/hugo-extended" = "latest"   # extended build (short name `hugo` is non-extended)
+hugo = "latest"          # >= 0.170 ships a single binary (extended edition and LibSass removed; SCSS needs Dart Sass installed separately)
 "aqua:boyter/scc" = "latest"
 opentofu = "latest"
 shellcheck = "latest"
