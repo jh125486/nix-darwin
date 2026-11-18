@@ -79,28 +79,28 @@ The `update` alias in `~/.zshrc` (from `dotfiles/zshrc`) runs `brew update && br
 - `~/Library/Group Containers/UBF8T346G9.Office` (includes `Outlook 15 Profiles`)
 - `~/Library/Containers/com.microsoft.Outlook`
 
-**Scripts.** `~/bin/backup-outlook.sh [dest_dir]` (default `~/Backups`) writes a timestamped tar.gz;
-`~/bin/restore-outlook.sh <archive> [--force]`. Both refuse to run while Outlook is running; restore
-refuses to overwrite existing directories without `--force`.
+**Scripts.** `~/bin/backup-outlook.sh [dest_dir]` (default `~/Backups`) writes `outlook-backup-YYYYMMDD-HHMMSS.zip`;
+`~/bin/restore-outlook.sh <archive> [--force]` restores it. Restore accepts the current `.zip` and the older
+`.tar.gz`/`.tgz` archives (members rooted at `Library/...`, made without xattrs/ACLs).
 
 **Moving to the new laptop.**
-1. Quit Outlook on the old machine and run `backup-outlook.sh`.
+1. Quit all Office apps (Outlook, Word, Excel, PowerPoint, OneNote, Teams, AutoUpdate) on the old machine and run `backup-outlook.sh`.
 2. Copy the archive to the new machine.
 3. Install Office via `mise bootstrap` (the `brew-cask:microsoft-office` package). Do NOT launch Outlook.
 4. Run `restore-outlook.sh <archive> --force` (moves any fresh install data aside).
 5. Launch Outlook.
 
 Notes:
-- Both scripts refuse to run if any `/Applications/Microsoft ` process is running and print which.
-- Backup writes `*.partial` then renames on success, and verifies with `tar -tzf`, so a truncated archive never looks valid. Archives use `--mac-metadata` (xattrs/ACLs) on create and extract.
+- **Running-app check.** Both scripts refuse to run while a real Office app is running (main binaries of Outlook, Word, Excel, PowerPoint, OneNote, Teams, Microsoft AutoUpdate / Update Assistant) and print which. Microsoft Edge and the macOS-managed widget extensions (`*.appex` such as `TeamsWidgetExtension`, `WordWidget_mac`) are deliberately ignored: Edge does not write the Office containers and the widgets are kept alive by macOS. The first version matched every `/Applications/Microsoft ` process, so it could never pass while Edge was open.
+- **Format and what is preserved.** The zip is made with `ditto -c -k --sequesterRsrc`; extended attributes (about 58k files carry them) and ACLs ride along as AppleDouble `__MACOSX/` entries and come back on restore. Symlinks are kept. Not included: keychain tokens/passwords (re-authenticate every account) and anything outside the three paths below.
+- **Why not tar.gz.** The first version used `tar --mac-metadata -czpf`. On this data bsdtar 3.5.3 (libarchive 3.7.4) wrote an archive it could not read back (`tar: Special header too large`), so its own `tar -tzf` verification failed and no backup was produced. `tar --no-mac-metadata --no-xattrs --no-acls` does round-trip but drops xattrs/ACLs (accounts, signatures and the mail cache are plain file contents, so Outlook does not need them, but a zip that keeps them is closer to the original). The old `.tar.gz` format is still accepted on restore.
+- **Backup safety.** It writes `*.partial`, then checks `unzip -t`, that all expected members are listed, and that the entry count matches the staged tree, before renaming. It prints the sha256 and entry count, and prints "Wrote ..." only after all of that passed. Because `ditto` takes one source, it first APFS-clones the members into a staging dir in `$HOME` (removed on exit; a plain copy, needing about 2 GB free, if cloning is unavailable).
+- **Restore safety.** It validates the archive first, rejects absolute, `..` or non-`Library/` entries, refuses to overwrite existing targets without `--force`, extracts into a staging dir and verifies entry counts, only then moves existing targets aside to `*.bak-<epoch>` (never deleted) and moves the restored members into `$HOME`. Only restore archives you made yourself.
 - Your terminal needs Full Disk Access (System Settings > Privacy & Security) to read/write these containers.
-- Keychain tokens/passwords are NOT in the backup; expect to re-authenticate every account.
-- A fresh Office install will likely already have created the Group Container, so restore needs `--force`. That moves existing dirs to `*.bak-<epoch>` rather than deleting them.
+- A fresh Office install will likely already have created the Group Container, so restore needs `--force`.
 - The optional `~/Library/Preferences/com.microsoft.Outlook.plist` is included when present.
 
-**The restore is UNTESTED.** Try it on a spare macOS user before relying on it. The new Outlook may
-also sync some settings server-side, so results can differ from a pure file restore. Keep the original
-data until verified.
+**Testing status.** Backup and restore were run end to end only against a scratch `$HOME` holding a copy of a real backup of the Office group container (58k files) plus the Outlook container: zip create/verify/restore, the refuse-without-`--force` path, the `--force` move-aside path, and restore of an existing-style `.tar.gz`. File counts, a 1,535-file sha256 sample and xattr counts matched. It has NOT been tested into the real `~/Library`, on a second machine, or with Outlook then launching against the restored data. The new Outlook may also sync some settings server-side, so results can differ from a pure file restore. Keep the original data until verified.
 
 ## 3. Edge apps and the Parallels VM
 
