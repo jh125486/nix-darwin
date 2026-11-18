@@ -26,7 +26,8 @@ dotfile (`~/.config/mise/config.toml`); mise re-reads its own config after writi
 | What | Owner |
 |------|------|
 | Runtimes and ~55 CLIs (go, node, python, uv, rust, zig, java, aws-cli, gh, jq, ... ) | `[tools]` in `dotfiles/mise/config.toml` (registry/aqua, `github:`, `go:`, `npm:`, `conda:` backends; list with backends in the PR description) |
-| Casks (46 GUI apps) and 9 formulae (dockutil, mkvtoolnix, nmap, john-jumbo, pam-reattach, qemu, sl, wireguard-tools, yubico-piv-tool) | `[bootstrap.packages]` in `mise.toml` (`brew-cask:` / `brew:`; mise installs only what is missing) |
+| 39 GUI casks and 9 formulae (dockutil, mkvtoolnix, nmap, john-jumbo, pam-reattach, qemu, sl, wireguard-tools, yubico-piv-tool) | `[bootstrap.packages]` in `mise.toml` (`brew-cask:` / `brew:`; mise installs only what is missing) |
+| 6 more GUI casks mise cannot install (steam, logitech-presentation, adobe-creative-cloud, displaylink, google-drive, logi-options+) | `scripts/brew-only-casks.sh`, the first step of the `bootstrap` task (`brew install --cask`; see "Casks mise cannot install" below) |
 | Dotfiles | `[dotfiles]` in `mise.toml` |
 | macOS Dock orientation, Finder view style and search scope | `[bootstrap.settings.macos]` (native) |
 | Dock app order, VS Code extensions, Edge apps, Touch ID sudo | hooks / `[tasks.bootstrap]` calling `scripts/*.sh` (not expressible natively; see below) |
