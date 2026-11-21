@@ -4,6 +4,7 @@
 			"type": "local",
 			"command": "npx",
 			"args": [
+				"-y",
 				"--registry",
 				"https://registry.npmjs.org",
 				"chrome-devtools-mcp@1.6.0"

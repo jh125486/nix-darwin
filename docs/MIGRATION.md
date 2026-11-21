@@ -153,7 +153,7 @@ from `mise bootstrap`. Sources are under `dotfiles/claude/`, `dotfiles/codex/` a
 | `~/.claude/settings.json`: only `permissions`, `model`, `skillOverrides`, `statusLine`, `enabledPlugins`, `extraKnownMarketplaces`, `effortLevel`, `tui`, `skipDangerousModePermissionPrompt`, `theme`, `switchModelsOnFlag`, `agentPushNotifEnabled` | merge (json) |
 | `~/.codex/AGENTS.md`, `~/.codex/RTK.md` (AGENTS.md includes `@RTK.md`; `rtk` is in the tools list) | copy |
 | `~/.codex/config.toml`: only `model`, `model_reasoning_effort`, `approvals_reviewer`, `service_tier`, `web_search`, `[features]`, `[tui]`, `[memories]` | merge (toml) |
-| `~/.copilot/mcp-config.json` | copy |
+| `~/.copilot/mcp-config.json` (the repo copy adds `-y` to the `npx` args so a fresh machine does not stall on npx's install prompt; Copilot starts MCP servers non-interactively) | copy |
 | `~/.copilot/settings.json`: only `allowedUrls` and `model` | merge (json) |
 
 **Deliberately NOT captured:**
