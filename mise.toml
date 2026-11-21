@@ -21,6 +21,22 @@
 # VS Code rewrites its settings.json, so only own the keys we ship (merge, JSONC).
 "~/Library/Application Support/Code/User/settings.json/shared" = { source = "dotfiles/vscode/shared.json", merge = true, format = "jsonc" }
 
+# Hand-written AI-tool config (Claude Code, Codex, Copilot CLI). Copy mode: edit the live file, then
+# `mise dot add --changed` copies it back here. Settings files are merges (mise owns only the keys we ship;
+# the apps keep the rest, e.g. hooks, trusted projects, plugin state). NOT captured: auth, memories, sessions,
+# *.local.json, plugin/herdr-installed hooks and skills (they hardcode machine paths). See docs/MIGRATION.md.
+"~/.claude/CLAUDE.md" = { source = "dotfiles/claude/CLAUDE.md", mode = "copy" }
+"~/.claude/skills/bash-tool-habits" = { source = "dotfiles/claude/skills/bash-tool-habits", mode = "copy" }
+"~/.claude/skills/git-worktree-workflow" = { source = "dotfiles/claude/skills/git-worktree-workflow", mode = "copy" }
+"~/.claude/skills/go-present" = { source = "dotfiles/claude/skills/go-present", mode = "copy" }
+"~/.claude/skills/go-test-conventions" = { source = "dotfiles/claude/skills/go-test-conventions", mode = "copy" }
+"~/.claude/settings.json/shared" = { source = "dotfiles/claude/settings.shared.json", merge = true, format = "json" }
+"~/.codex/AGENTS.md" = { source = "dotfiles/codex/AGENTS.md", mode = "copy" }
+"~/.codex/RTK.md" = { source = "dotfiles/codex/RTK.md", mode = "copy" }
+"~/.codex/config.toml/shared" = { source = "dotfiles/codex/config.shared.toml", merge = true, format = "toml" }
+"~/.copilot/mcp-config.json" = { source = "dotfiles/copilot/mcp-config.json", mode = "copy" }
+"~/.copilot/settings.json/shared" = { source = "dotfiles/copilot/settings.shared.json", merge = true, format = "json" }
+
 # ~/bin scripts: regular executable copies.
 # The old update.sh is gone (the `update` alias lives in ~/.zshrc). The OLD live ~/bin/update.sh ran
 # `brew cu -a`, which wipes Outlook, so mise REMOVES it from every machine (absent: no prompt, no content compare).
