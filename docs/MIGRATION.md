@@ -149,7 +149,7 @@ from `mise bootstrap`. Sources are under `dotfiles/claude/`, `dotfiles/codex/` a
 
 | Captured | Mode |
 |---|---|
-| `~/.claude/CLAUDE.md`, `~/.claude/skills/{bash-tool-habits,git-worktree-workflow,go-present,go-test-conventions}/` (one entry per skill directory; mise copies directories) | copy |
+| `~/.claude/CLAUDE.md`, `~/.claude/skills/{bash-tool-habits,git-worktree-workflow,go-present,go-test-conventions}/` (one entry per skill directory; mise copies directories but does not delete extra files in them) | copy |
 | `~/.claude/settings.json`: only `permissions`, `model`, `skillOverrides`, `statusLine`, `enabledPlugins`, `extraKnownMarketplaces`, `effortLevel`, `tui`, `skipDangerousModePermissionPrompt`, `theme`, `switchModelsOnFlag`, `agentPushNotifEnabled` | merge (json) |
 | `~/.codex/AGENTS.md`, `~/.codex/RTK.md` (AGENTS.md includes `@RTK.md`; `rtk` is in the tools list) | copy |
 | `~/.codex/config.toml`: only `model`, `model_reasoning_effort`, `approvals_reviewer`, `service_tier`, `web_search`, `[features]`, `[tui]`, `[memories]` | merge (toml) |
@@ -165,12 +165,14 @@ from `mise bootstrap`. Sources are under `dotfiles/claude/`, `dotfiles/codex/` a
 (`hooks`, extra `deny` rules, other plugins, Codex `[projects.*]`) are kept; nested objects merge recursively, but
 **arrays are replaced, not unioned**, so `permissions.allow` and `allowedUrls` in the repo win on every apply (an extra
 allow rule added in the app is dropped; add it to the source instead). Scalars such as `model` are reset to the repo value
-on apply; use `merge = "missing"` on an entry if the app should win. TOML comments and key order are preserved.
+on every explicit `mise bootstrap` / `mise dot apply`, **without asking** (copy entries prompt; merge entries do not).
+Nothing applies automatically. `merge = "missing"` lets the app win but is per entry, not per key. TOML comments and key
+order are preserved.
 
 **Editing:** copy mode means the live file and the repo diverge when you edit the live one. Copy edits back with
 `mise dot add --changed` (updates every changed copy-mode file; it does not pick up files inside the skill directories) or
 `mise dot add '~/.claude/skills/<name>'` for a skill, then commit. Merge entries are not copied back: edit the
 `*.shared.*` source. `mise dot diff` shows what an apply would change.
 
-Known inconsistency: `~/.codex/AGENTS.md` still says to enable squash auto-merge, while `~/.claude/CLAUDE.md` says not to.
-Both are copied as they are.
+Intentional difference: `~/.codex/AGENTS.md` enables squash auto-merge, while `~/.claude/CLAUDE.md` says not to. Both are
+copied as they are.
