@@ -20,7 +20,8 @@ bash /tmp/bootstrap.sh
 
 1. Installs Homebrew if missing, then mise.
 2. Runs `mise bootstrap --from <this repo>`, which clones the repo to `~/.dotfiles` and applies it:
-   brew formulae and casks (including Microsoft Office), dotfiles (`~/.zshrc`, `~/.gitconfig`, `~/.config/mise/config.toml`, ...),
+   brew formulae and casks (including Microsoft Office), dotfiles (`~/.zshrc`, `~/.gitconfig`, `~/.config/mise/config.toml`, ...,
+   plus Claude Code / Codex / Copilot CLI config: instructions, skills, shared settings; see [docs/MIGRATION.md](docs/MIGRATION.md#6-ai-tool-config-claude-code-codex-copilot-cli)),
    macOS defaults (Dock on the right, Finder list view), Touch ID for sudo, VS Code extensions, Edge apps and the Dock order.
 3. Runs `mise install` to make sure every tool in `~/.config/mise/config.toml` is installed.
 
