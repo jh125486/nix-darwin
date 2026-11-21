@@ -2,13 +2,15 @@
 # Casks that mise cannot install, installed (and later upgraded) by Homebrew instead:
 #  - steam: the download has no Steam.app, so mise fails with "app artifact 'Steam.app' was not found"
 #  - logitech-presentation: `installer manual:` only ("only script installers are supported")
+#  - parallels: mise's extract step runs `xattr -d com.apple.FinderInfo` on the app and aborts with
+#    "No such xattr com.apple.FinderInfo" (exit 1) because the app has no such attribute
 #  - adobe-creative-cloud, displaylink, google-drive, logi-options+: pkg/installer casks, installed with brew
 #    (known to work); not verified with mise. One failing cask aborts the whole `mise bootstrap packages apply`.
 # Idempotent. Needs a real terminal for the sudo prompts of the pkg installers.
 set -uo pipefail
 
 eval "$(/opt/homebrew/bin/brew shellenv)"
-casks=(steam logitech-presentation adobe-creative-cloud displaylink google-drive logi-options+)
+casks=(steam parallels logitech-presentation adobe-creative-cloud displaylink google-drive logi-options+)
 
 status=0
 for c in "${casks[@]}"; do
