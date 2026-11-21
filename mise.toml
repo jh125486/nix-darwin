@@ -132,7 +132,6 @@ run = [
 "brew-cask:microsoft-office" = "latest"
 
 "brew-cask:openinterminal-lite" = "latest"
-"brew-cask:parallels" = "latest"
 "brew-cask:proton-mail" = "latest"
 "brew-cask:protonvpn" = "latest"
 "brew-cask:qflipper" = "latest"
