@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gofmt -l *)",
+      "Bash(op read *)",
+      "Bash(docker info *)",
+      "Bash(git fetch origin)",
+      "Bash(op whoami*)",
+      "Bash(pmset -g*)",
+      "Bash(op item get *)"
+    ],
+    "defaultMode": "auto"
+  },
+  "model": "sonnet",
+  "skillOverrides": {
+    "bash-tool-habits": "off"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "$HOME/.local/share/mise/shims/wt list statusline --format=claude-code"
+  },
+  "enabledPlugins": {
+    "gopls-lsp@claude-plugins-official": true,
+    "worktrunk@worktrunk": true
+  },
+  "extraKnownMarketplaces": {
+    "worktrunk": {
+      "source": {
+        "source": "github",
+        "repo": "max-sixty/worktrunk"
+      }
+    }
+  },
+  "effortLevel": "medium",
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "auto",
+  "switchModelsOnFlag": true,
+  "agentPushNotifEnabled": true
+}
