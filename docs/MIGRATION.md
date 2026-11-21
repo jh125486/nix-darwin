@@ -9,7 +9,8 @@ for casks and nine formulae, plus the one thing needed to get mise itself.
 ```
 mise.toml               project config: [dotfiles], [bootstrap.*], hooks, [tasks.bootstrap], packages
 dotfiles/               sources deployed by [dotfiles] (zshrc, zprofile, gitconfig.tera, git/ignore,
-                        mise/config.toml = the global tools list, vscode/shared.json, bin/*.sh)
+                        mise/config.toml = the global tools list, vscode/shared.json, bin/*.sh,
+                        claude/ codex/ copilot/ = AI tool config, see section 6)
 scripts/                idempotent helper scripts called from hooks / the bootstrap task
 bootstrap.sh            new-Mac entry point (Homebrew -> mise -> `mise bootstrap --from`)
 docs/MIGRATION.md      this file
@@ -140,3 +141,38 @@ contains `brew cu -a` (wipes Outlook), so it must not survive. How it is removed
 2. A `post-dotfiles` hook (`scripts/check-update-sh.sh`) fails the whole bootstrap if `~/bin/update.sh` still exists and
    any non-comment line contains `brew cu`, `cask-upgrade` or `--greedy`. Verified exit 1 against an old-style file, 0 after removal.
 3. Belt and braces: `rm ~/bin/update.sh` before the first run is also fine.
+
+## 6. AI tool config (Claude Code, Codex, Copilot CLI)
+
+`[dotfiles]` in `mise.toml` captures the hand-written part of the AI tools' config, so a new laptop gets it
+from `mise bootstrap`. Sources are under `dotfiles/claude/`, `dotfiles/codex/` and `dotfiles/copilot/`.
+
+| Captured | Mode |
+|---|---|
+| `~/.claude/CLAUDE.md`, `~/.claude/skills/{bash-tool-habits,git-worktree-workflow,go-present,go-test-conventions}/` (one entry per skill directory; mise copies directories but does not delete extra files in them) | copy |
+| `~/.claude/settings.json`: only `permissions`, `model`, `skillOverrides`, `statusLine`, `enabledPlugins`, `extraKnownMarketplaces`, `effortLevel`, `tui`, `skipDangerousModePermissionPrompt`, `theme`, `switchModelsOnFlag`, `agentPushNotifEnabled` | merge (json) |
+| `~/.codex/AGENTS.md`, `~/.codex/RTK.md` (AGENTS.md includes `@RTK.md`; `rtk` is in the tools list) | copy |
+| `~/.codex/config.toml`: only `model`, `model_reasoning_effort`, `approvals_reviewer`, `service_tier`, `web_search`, `[features]`, `[tui]`, `[memories]` | merge (toml) |
+| `~/.copilot/mcp-config.json` (the repo copy adds `-y` to the `npx` args so a fresh machine does not stall on npx's install prompt; Copilot starts MCP servers non-interactively) | copy |
+| `~/.copilot/settings.json`: only `allowedUrls` and `model` | merge (json) |
+
+**Deliberately NOT captured:**
+- Auth and secrets (`~/.codex/auth.json`), Codex memories, history, sessions, sqlite, logs, caches, `*.local.json`, trusted-project lists and hook trust hashes.
+- Anything a plugin or tool installs itself: `~/.claude/skills/synced`, `~/.agents/skills`, the herdr skill, and every `hooks/` directory (installed by herdr and caveman). Those re-install themselves.
+- Files with machine-specific absolute paths: the `hooks` key of Claude's and Copilot's `settings.json`, `~/.codex/hooks.json`, Claude's `autoMode` (names specific repos), `~/.copilot/config.json` and `permissions-config.json`, Codex `[projects.*]`, `[hooks.*]`, `[marketplaces.*]`, `[plugins.*]`, `[mcp_servers.*]`, `notify`.
+
+**Merge behaviour** (checked in a scratch `$HOME`): a missing target is created from the source; keys only the target has
+(`hooks`, extra `deny` rules, other plugins, Codex `[projects.*]`) are kept; nested objects merge recursively, but
+**arrays are replaced, not unioned**, so `permissions.allow` and `allowedUrls` in the repo win on every apply (an extra
+allow rule added in the app is dropped; add it to the source instead). Scalars such as `model` are reset to the repo value
+on every explicit `mise bootstrap` / `mise dot apply`, **without asking** (copy entries prompt; merge entries do not).
+Nothing applies automatically. `merge = "missing"` lets the app win but is per entry, not per key. TOML comments and key
+order are preserved.
+
+**Editing:** copy mode means the live file and the repo diverge when you edit the live one. Copy edits back with
+`mise dot add --changed` (updates every changed copy-mode file; it does not pick up files inside the skill directories) or
+`mise dot add '~/.claude/skills/<name>'` for a skill, then commit. Merge entries are not copied back: edit the
+`*.shared.*` source. `mise dot diff` shows what an apply would change.
+
+Intentional difference: `~/.codex/AGENTS.md` enables squash auto-merge, while `~/.claude/CLAUDE.md` says not to. Both are
+copied as they are.
